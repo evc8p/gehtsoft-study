@@ -77,7 +77,7 @@ public class CustomList implements List {
     @Override
     public boolean add(Object o) {
         ensureCapacity(size + 1);
-        elements[++size] = o;
+        elements[size++] = o;
         return true;
     }
 

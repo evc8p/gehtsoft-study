@@ -2,6 +2,8 @@ import com.evch.rrm.CustomList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class CustomListTests {
@@ -14,13 +16,13 @@ public class CustomListTests {
     @Test
     void customListConstructorShouldCreateListWithInitialCapacity() {
         CustomList list = new CustomList(1);
-        Assertions.assertEquals(list.size(),0);
+        Assertions.assertEquals(list.size(), 0);
     }
 
     @Test
     void customListConstructorShouldCreateListWithInitialCapacityOf0() {
         CustomList list = new CustomList(0);
-        Assertions.assertEquals(list.size(),0);
+        Assertions.assertEquals(list.size(), 0);
     }
 
     @Test
@@ -127,5 +129,51 @@ public class CustomListTests {
         Assertions.assertFalse(list.isEmpty());
         list.clear();
         Assertions.assertTrue(list.isEmpty());
+    }
+
+    @Test
+    void customListAndArrayListShouldReturnSameResultsOfAddMethod() {
+        CustomList customList = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        List arrayList = new ArrayList();
+        arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+        customList.add(11);
+        arrayList.add(11);
+        Assertions.assertEquals(customList.get(10), 11);
+        Assertions.assertEquals(arrayList.get(10), 11);
+    }
+
+    @Test
+    void customListAndArrayListShouldReturnSameResultsOfGetMethod() {
+        CustomList customList = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        List arrayList = new ArrayList();
+        arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+        Assertions.assertEquals(customList.get(2), 3);
+        Assertions.assertEquals(arrayList.get(2), 3);
+    }
+
+    @Test
+    void customListAndArrayListShouldReturnSameResultsOfSetMethod() {
+        CustomList customList = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        List arrayList = new ArrayList();
+        arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+        customList.set(0, 0);
+        arrayList.set(0, 0);
+        Assertions.assertEquals(customList.get(0), 0);
+        Assertions.assertEquals(customList.size(), 10);
+        Assertions.assertEquals(arrayList.get(0), 0);
+        Assertions.assertEquals(arrayList.size(), 10);
+    }
+
+    @Test
+    void customListAndArrayListShouldReturnSameResultsOfRemoveMethod() {
+        CustomList customList = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        List arrayList = new ArrayList();
+        arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+        customList.remove(9);
+        arrayList.remove(9);
+        Assertions.assertEquals(customList.indexOf(10), -1);
+        Assertions.assertEquals(customList.size(), 9);
+        Assertions.assertEquals(arrayList.indexOf(10), -1);
+        Assertions.assertEquals(arrayList.size(), 9);
     }
 }
