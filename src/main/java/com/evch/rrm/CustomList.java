@@ -2,7 +2,7 @@ package com.evch.rrm;
 
 import java.util.*;
 
-public class CustomList implements List {
+public class CustomList<E> implements List<E> {
     private static final int DEFAULT_CAPACITY = 10;
     private int capacity = DEFAULT_CAPACITY;
     private int size = 0;
@@ -30,7 +30,7 @@ public class CustomList implements List {
         this.elements = new Object[initialCapacity];
     }
 
-    public CustomList(Object[] elements) {
+    public CustomList(E[] elements) {
         if (Objects.isNull(elements)) {
             throw new IllegalArgumentException("Array is null");
         }
@@ -75,7 +75,7 @@ public class CustomList implements List {
     }
 
     @Override
-    public boolean add(Object o) {
+    public boolean add(E o) {
         ensureCapacity(size + 1);
         elements[size++] = o;
         return true;
@@ -125,22 +125,22 @@ public class CustomList implements List {
     }
 
     @Override
-    public Object get(int index) {
+    public E get(int index) {
         Objects.checkIndex(index, size);
-        return elements[index];
+        return (E) elements[index];
     }
 
     @Override
-    public Object set(int index, Object element) {
+    public E set(int index, E element) {
         Objects.checkIndex(index, size);
         Object previousElement = elements[index];
         elements[index] = element;
-        return previousElement;
+        return (E) previousElement;
     }
 
     @Override
-    public void add(int index, Object element) {
-        Objects.checkIndex(index, size);
+    public void add(int index, E element) {
+        Objects.checkIndex(index, capacity);
         ensureCapacity(size + 1);
         System.arraycopy(elements, index, elements, index + 1, size - index);
         elements[index] = element;
@@ -148,7 +148,7 @@ public class CustomList implements List {
     }
 
     @Override
-    public Object remove(int index) {
+    public E remove(int index) {
         Objects.checkIndex(index, size);
         Object removedElement = elements[index];
         if ((index + 1) < size) {
@@ -156,7 +156,7 @@ public class CustomList implements List {
         }
         elements[size - 1] = null;
         size--;
-        return removedElement;
+        return (E) removedElement;
     }
 
     @Override

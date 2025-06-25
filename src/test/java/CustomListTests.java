@@ -1,33 +1,34 @@
 import com.evch.rrm.CustomList;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class CustomListTests {
     @Test
     void customListConstructorShouldCreateListWithDefaultValues() {
         CustomList list = new CustomList();
-        Assertions.assertTrue(list.isEmpty());
+        assertTrue(list.isEmpty());
     }
 
     @Test
     void customListConstructorShouldCreateListWithInitialCapacity() {
         CustomList list = new CustomList(1);
-        Assertions.assertEquals(list.size(), 0);
+        assertEquals(0, list.size());
     }
 
     @Test
     void customListConstructorShouldCreateListWithInitialCapacityOf0() {
         CustomList list = new CustomList(0);
-        Assertions.assertEquals(list.size(), 0);
+        assertEquals(0, list.size());
     }
 
     @Test
     void customListConstructorShouldCreateListWithInitialCapacityNegative() {
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new CustomList(-1),
                 "Initial capacity is less than 0");
     }
@@ -35,37 +36,37 @@ public class CustomListTests {
     @Test
     void customListConstructorShouldCreateListWithInitialCapacityAndMultiplier() {
         CustomList list = new CustomList(5, 2.0f);
-        Assertions.assertTrue(list.isEmpty());
+        assertTrue(list.isEmpty());
     }
 
     @Test
     void customListConstructorShouldCreateListWithInitialCapacityAndMultiplierNegative() {
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new CustomList(-1, 1.0f),
                 "Initial capacity is less than 0 or multiplier < 1");
 
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new CustomList(0, 0.9f),
                 "Initial capacity is less than 0 or multiplier < 1");
     }
 
     @Test
     void customListConstructorShouldCreateListWithElementsWithSizeOf5() {
-        CustomList list = new CustomList(new Integer[]{null, 5, 1, 9, 7});
-        Assertions.assertFalse(list.isEmpty());
-        Assertions.assertEquals(list.size(), 5);
+        CustomList list = new CustomList(new String[]{"null", "5", "1", " 9", "7"});
+        assertFalse(list.isEmpty());
+        assertEquals(5, list.size());
     }
 
     @Test
     void customListConstructorShouldCreateListWithElementsWithSizeOf11() {
         CustomList list = new CustomList(new Integer[]{null, 5, 1, 9, 7, 8, 20, null, null, 10, 11});
-        Assertions.assertFalse(list.isEmpty());
-        Assertions.assertEquals(list.size(), 11);
+        assertFalse(list.isEmpty());
+        assertEquals(11, list.size());
     }
 
     @Test
     void customListConstructorShouldCreateListWithElementsNegative() {
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new CustomList(null),
                 "Array is null");
     }
@@ -73,8 +74,8 @@ public class CustomListTests {
     @Test
     void createdListOf10ElementsShouldHaveSizeEqualTo10() {
         CustomList list = new CustomList(new Integer[]{null, 5, 1, 9, 7, 8, 20, null, null, 10});
-        Assertions.assertFalse(list.isEmpty());
-        Assertions.assertEquals(list.size(), 10);
+        assertFalse(list.isEmpty());
+        assertEquals(10, list.size());
     }
 
     @Test
@@ -82,11 +83,11 @@ public class CustomListTests {
         CustomList list = new CustomList(new Object[new Random().nextInt(7)]);
         int oldSize = list.size();
         list.add(1);
-        Assertions.assertEquals(list.size(), oldSize + 1);
+        assertEquals(oldSize + 1, list.size());
 
         oldSize = list.size();
         list.add(0, 50);
-        Assertions.assertEquals(list.size(), oldSize + 1);
+        assertEquals(oldSize + 1, list.size());
     }
 
     @Test
@@ -94,7 +95,7 @@ public class CustomListTests {
         int size = new Random().nextInt(8) + 8;
         CustomList list = new CustomList(new Object[size]);
         list.add(7, 50);
-        Assertions.assertEquals((int) list.get(7), 50);
+        assertEquals(50, (int) list.get(7));
     }
 
     @Test
@@ -102,7 +103,7 @@ public class CustomListTests {
         int size = new Random().nextInt(8) + 8;
         CustomList list = new CustomList(new Object[size]);
         list.set(7, 50);
-        Assertions.assertEquals((int) list.get(7), 50);
+        assertEquals(50, (int) list.get(7));
     }
 
     @Test
@@ -110,25 +111,25 @@ public class CustomListTests {
         CustomList list = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, null, 10});
         list.remove(0);
         list.remove(7);
-        Assertions.assertEquals(list.size(), 8);
-        Assertions.assertEquals(list.indexOf(1), -1);
-        Assertions.assertEquals(list.indexOf(null), -1);
+        assertEquals(8, list.size());
+        assertEquals(-1, list.indexOf(1));
+        assertEquals(-1, list.indexOf(null));
     }
 
     @Test
     void elementRemovedByValueNullShouldBeNotFoundInListAndDecreaseListSize() {
         CustomList list = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, null, 10});
         list.remove(null);
-        Assertions.assertEquals(list.size(), 9);
-        Assertions.assertEquals(list.indexOf(null), -1);
+        assertEquals(9, list.size());
+        assertEquals(-1, list.indexOf(null));
     }
 
     @Test
     void clearMethodShouldClearEntireList() {
         CustomList list = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, null, 10});
-        Assertions.assertFalse(list.isEmpty());
+        assertFalse(list.isEmpty());
         list.clear();
-        Assertions.assertTrue(list.isEmpty());
+        assertTrue(list.isEmpty());
     }
 
     @Test
@@ -138,8 +139,8 @@ public class CustomListTests {
         arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
         customList.add(11);
         arrayList.add(11);
-        Assertions.assertEquals(customList.get(10), 11);
-        Assertions.assertEquals(arrayList.get(10), 11);
+        assertEquals(11, customList.get(10));
+        assertEquals(11, arrayList.get(10));
     }
 
     @Test
@@ -147,8 +148,8 @@ public class CustomListTests {
         CustomList customList = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         List arrayList = new ArrayList();
         arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
-        Assertions.assertEquals(customList.get(2), 3);
-        Assertions.assertEquals(arrayList.get(2), 3);
+        assertEquals(3, customList.get(2));
+        assertEquals(3, arrayList.get(2));
     }
 
     @Test
@@ -158,10 +159,10 @@ public class CustomListTests {
         arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
         customList.set(0, 0);
         arrayList.set(0, 0);
-        Assertions.assertEquals(customList.get(0), 0);
-        Assertions.assertEquals(customList.size(), 10);
-        Assertions.assertEquals(arrayList.get(0), 0);
-        Assertions.assertEquals(arrayList.size(), 10);
+        assertEquals(0, customList.get(0));
+        assertEquals(10, customList.size());
+        assertEquals(0, arrayList.get(0));
+        assertEquals(10, arrayList.size());
     }
 
     @Test
@@ -171,9 +172,23 @@ public class CustomListTests {
         arrayList.addAll(List.of(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
         customList.remove(9);
         arrayList.remove(9);
-        Assertions.assertEquals(customList.indexOf(10), -1);
-        Assertions.assertEquals(customList.size(), 9);
-        Assertions.assertEquals(arrayList.indexOf(10), -1);
-        Assertions.assertEquals(arrayList.size(), 9);
+        assertEquals(-1, customList.indexOf(10));
+        assertEquals(9, customList.size());
+        assertEquals(-1, arrayList.indexOf(10));
+        assertEquals(9, arrayList.size());
+    }
+
+    @Test
+    void customListShouldAcceptTypeInteger() {
+        Integer[] integers = new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        assertDoesNotThrow(() -> new CustomList(integers));
+        assertDoesNotThrow(() -> new CustomList<Integer>());
+        CustomList<Integer> customList = new CustomList<>(20, 2.0f);
+        customList.add(0, 5);
+        customList.add(0, 10);
+        customList.add(0, 15);
+        customList.set(0, 20);
+        customList.remove(1);
+        assertEquals(5, customList.get(1));
     }
 }
