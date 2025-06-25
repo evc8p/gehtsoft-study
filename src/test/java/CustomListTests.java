@@ -18,6 +18,12 @@ public class CustomListTests {
     }
 
     @Test
+    void customListConstructorShouldCreateListWithInitialCapacityOf0() {
+        CustomList list = new CustomList(0);
+        Assertions.assertEquals(list.size(),0);
+    }
+
+    @Test
     void customListConstructorShouldCreateListWithInitialCapacityNegative() {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new CustomList(-1),
@@ -118,8 +124,8 @@ public class CustomListTests {
     @Test
     void clearMethodShouldClearEntireList() {
         CustomList list = new CustomList(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, null, 10});
-        list.remove(null);
-        Assertions.assertEquals(list.size(), 9);
-        Assertions.assertEquals(list.indexOf(null), -1);
+        Assertions.assertFalse(list.isEmpty());
+        list.clear();
+        Assertions.assertTrue(list.isEmpty());
     }
 }
