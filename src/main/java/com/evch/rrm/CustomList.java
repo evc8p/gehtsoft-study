@@ -6,7 +6,7 @@ public class CustomList<E> implements List<E> {
     private static final int DEFAULT_CAPACITY = 10;
     private int capacity = DEFAULT_CAPACITY;
     private int size = 0;
-    private float multiplier = 1.0f;
+    private float multiplier = 2.0f;
     private Object[] elements;
 
     public CustomList() {
@@ -212,6 +212,7 @@ public class CustomList<E> implements List<E> {
         Object[] newElements = new Object[newCapacity];
         System.arraycopy(elements, 0, newElements, 0, elements.length);
         elements = newElements;
+        capacity = newCapacity;
         return elements;
     }
 }

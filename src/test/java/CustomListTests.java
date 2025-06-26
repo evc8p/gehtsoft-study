@@ -79,15 +79,19 @@ public class CustomListTests {
     }
 
     @Test
-    void addingOneItemShouldIncreaseSizeOfListBy1() {
+    void adding20ItemShouldIncreaseSizeOfListBy20() {
         CustomList list = new CustomList(new Object[new Random().nextInt(7)]);
         int oldSize = list.size();
-        list.add(1);
-        assertEquals(oldSize + 1, list.size());
+        for (int i = 0; i < 20; i++) {
+            list.add(1);
+        }
+        assertEquals(oldSize + 20, list.size());
 
         oldSize = list.size();
-        list.add(0, 50);
-        assertEquals(oldSize + 1, list.size());
+        for (int i = 0; i < 50; i++) {
+            list.add(0, 50);
+        }
+        assertEquals(oldSize + 50, list.size());
     }
 
     @Test
