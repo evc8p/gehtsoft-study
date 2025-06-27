@@ -56,12 +56,12 @@ public class CustomList<E> implements List<E> {
 
     @Override
     public boolean contains(Object o) {
-        return false;
+        return indexOf(o) > -1;
     }
 
     @Override
-    public Iterator iterator() {
-        return null;
+    public Iterator<E> iterator() {
+        return listIterator();
     }
 
     @Override
@@ -92,11 +92,30 @@ public class CustomList<E> implements List<E> {
 
     @Override
     public boolean addAll(Collection c) {
-        return false;
+        Objects.requireNonNull(c, "The collection must not be null ");
+        final Collection objects = c;
+        for (Object object : objects) {
+            if (Objects.isNull(object)) {
+                add(null);
+            } else {
+                add((E) object);
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean addAll(int index, Collection c) {
+        Objects.checkIndex(index, capacity);
+        Objects.nonNull(c);
+        final Object[] objects = Arrays.copyOf(c.toArray(), c.size(), Object[].class);
+        if (objects.length != 0) {
+            ensureCapacity(size + objects.length);
+            System.arraycopy(elements, index, elements, index + objects.length, size - index);
+            System.arraycopy(objects, 0, elements, index, objects.length);
+            size += objects.length;
+            return true;
+        }
         return false;
     }
 
@@ -112,7 +131,13 @@ public class CustomList<E> implements List<E> {
 
     @Override
     public boolean containsAll(Collection c) {
-        return false;
+        final Collection objects = c;
+        for (Object object : objects) {
+            if (indexOf(object) == -1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -178,31 +203,44 @@ public class CustomList<E> implements List<E> {
 
     @Override
     public int lastIndexOf(Object o) {
-        return 0;
+        final Object[] objects = elements;
+        for (int i = size - 1; i >= 0; i--) {
+            if (Objects.isNull(o)) {
+                if (Objects.isNull(objects[i])) {
+                    return i;
+                }
+            } else {
+                if (o.equals(objects[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override
-    public ListIterator listIterator() {
-        return null;
+    public ListIterator<E> listIterator() {
+        return new ListItr();
     }
 
     @Override
-    public ListIterator listIterator(int index) {
-        return null;
+    public ListIterator<E> listIterator(int index) {
+        return new ListItr(index);
     }
 
     @Override
-    public List subList(int fromIndex, int toIndex) {
-        return List.of();
+    public List<E> subList(int fromIndex, int toIndex) {
+        Objects.checkFromToIndex(fromIndex, toIndex, capacity);
+        return (List<E>) List.of(Arrays.copyOfRange(elements, fromIndex, toIndex));
     }
 
     private void ensureCapacity(int newCapacity) {
         if (newCapacity > capacity) {
-            grow((int) (capacity * multiplier));
+            grow((int) (newCapacity * multiplier));
         }
     }
 
-    private Object[] grow(int newCapacity) {
+    private void grow(int newCapacity) {
         if (newCapacity == capacity) {
             newCapacity++;
         }
@@ -213,6 +251,110 @@ public class CustomList<E> implements List<E> {
         System.arraycopy(elements, 0, newElements, 0, elements.length);
         elements = newElements;
         capacity = newCapacity;
-        return elements;
+    }
+
+    private class ListItr implements ListIterator<E> {
+        private int cursor = 0;
+
+        public ListItr() {
+        }
+
+        ListItr(int index) {
+            Objects.checkIndex(index, capacity);
+            cursor = index;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor < size();
+        }
+
+        @Override
+        public E next() {
+            return (E) get(cursor++);
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return cursor != 0;
+        }
+
+        @Override
+        public E previous() {
+            return (E) get(--cursor);
+        }
+
+        @Override
+        public int nextIndex() {
+            return cursor;
+        }
+
+        @Override
+        public int previousIndex() {
+            return cursor - 1;
+        }
+
+        @Override
+        public void remove() {
+            if (hasPrevious()) {
+                CustomList.this.remove(previousIndex());
+                cursor--;
+            }
+        }
+
+        @Override
+        public void set(E e) {
+            if (hasPrevious()) {
+                CustomList.this.set(cursor, e);
+            }
+        }
+
+        @Override
+        public void add(E e) {
+            if (hasPrevious()) {
+                CustomList.this.add(cursor - 1, e);
+                cursor++;
+            }
+        }
+    }
+
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+
+        if (Objects.isNull(o) || !(o instanceof List)) {
+            return false;
+        }
+
+        List<?> list = (List<?>) o;
+        if (size != list.size()) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (Objects.isNull(elements[i])) {
+                if (Objects.nonNull(list.get(i))) {
+                    return false;
+                }
+            } else {
+                if (Objects.isNull(list.get(i))) {
+                    return false;
+                } else {
+                    if (!elements[i].equals(list.get(i))) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public int hashCode() {
+        final Object[] e = Arrays.copyOfRange(elements, 0, size);
+        int hashCode = 1;
+        for (Object o : e) {
+            hashCode = 31 * hashCode + (e == null ? 0 : e.hashCode());
+        }
+        return hashCode;
     }
 }
