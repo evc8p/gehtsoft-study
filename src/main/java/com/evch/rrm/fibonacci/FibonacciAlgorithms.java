@@ -20,30 +20,26 @@ public class FibonacciAlgorithms {
     public static void main(String[] args) {
         // Recursive (O(2^n))
         System.out.println("Recursive:");
-        runAndMeasure(() -> fibonacciRecursive(20));
-        runAndMeasure(() -> fibonacciRecursive(25));
-        runAndMeasure(() -> fibonacciRecursive(40));
-        runAndMeasure(() -> fibonacciRecursive(43));
-        runAndMeasure(() -> fibonacciRecursive(45));
+        for (int i = 0; i < 36; i++) {
+            int j = i;
+            runAndMeasureTime(() -> fibonacciRecursive(j));
+        }
 
-        // Memoized (O(1))
+        // Memoized (O(nlogn))
         System.out.println("Memoized:");
-        runAndMeasure(() -> fibonacciMemoized(3000));
-        runAndMeasure(() -> fibonacciMemoized(6730)); // max. if > 6730 then StackOverflow
+        runAndMeasureTime(() -> fibonacciMemoized(350000));
+        runAndMeasureTime(() -> fibonacciMemoized(700000));
+        runAndMeasureTime(() -> fibonacciMemoized(1400000));
+        runAndMeasureTime(() -> fibonacciMemoized(2800000));
+        runAndMeasureTime(() -> fibonacciMemoized(5600000));
 
         // Iterative (O(n))
         System.out.println("Iterative:");
-        runAndMeasure(() -> fibonacciIterative(6730));
-        runAndMeasure(() -> fibonacciIterative(10000));
-        runAndMeasure(() -> fibonacciIterative(20000));
-        runAndMeasure(() -> fibonacciIterative(40000));
-        runAndMeasure(() -> fibonacciIterative(80000));
-        runAndMeasure(() -> fibonacciIterative(160000));
-        runAndMeasure(() -> fibonacciIterative(320000));
-        runAndMeasure(() -> fibonacciIterative(640000));
-        runAndMeasure(() -> fibonacciIterative(1280000));
-        runAndMeasure(() -> fibonacciIterative(2560000));
-        runAndMeasure(() -> fibonacciIterative(5120000));
+        runAndMeasureTime(() -> fibonacciIterative(350000));
+        runAndMeasureTime(() -> fibonacciIterative(700000));
+        runAndMeasureTime(() -> fibonacciIterative(1400000));
+        runAndMeasureTime(() -> fibonacciIterative(2800000));
+        runAndMeasureTime(() -> fibonacciIterative(5600000));
     }
 
     public static long fibonacciRecursive(int n) {
@@ -74,9 +70,26 @@ public class FibonacciAlgorithms {
         return n < 2 ? n : result;
     }
 
-    public static void runAndMeasure(Runnable task) {
+    public static void runAndMeasureTime(Runnable task) {
         long t = System.currentTimeMillis();
-        task.run();
-        System.out.printf("Time taken: %d ms\n", (System.currentTimeMillis() - t));
+        int numberOfIterations = 1;
+        for (int i = 0; i < numberOfIterations; i++) {
+            resultsCacheForMemoized = new HashMap<>();
+            resultsCacheForIterative = new HashMap<>(Map.of(-1, 0L, 0, 0L, 1, 1L));
+            task.run();
+        }
+        System.out.printf("The mean time taken: %d ms\n", (System.currentTimeMillis() - t) / numberOfIterations);
+    }
+
+    public static void runAndCheckMemory(Runnable task) {
+        System.gc();
+        int numberOfIterations = 1;
+        long m = Runtime.getRuntime().freeMemory();
+        for (int i = 0; i < numberOfIterations; i++) {
+            resultsCacheForMemoized = new HashMap<>();
+            resultsCacheForIterative = new HashMap<>(Map.of(-1, 0L, 0, 0L, 1, 1L));
+            task.run();
+        }
+        System.out.printf("Used memory %d Mb\n", (Math.abs(m - Runtime.getRuntime().freeMemory()) / 1024));
     }
 }
