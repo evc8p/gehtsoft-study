@@ -1,0 +1,14 @@
+
+Bulk Addition Tests. 10_000_000 iterations
+          		min		max		average
+linkedList		96ms	2039ms	1067ms
+customList		75ms	142ms	108ms
+arrayList		79ms	197ms	138ms
+
+
+Add/Remove Tests. 100_000 iterations
+          		min		max		average
+linkedList		0ms		9ms		4ms
+customList		357ms	445ms	401ms
+arrayList		361ms	386ms	373ms
+
