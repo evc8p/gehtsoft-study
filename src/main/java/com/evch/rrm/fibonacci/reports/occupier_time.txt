@@ -1,0 +1,35 @@
+-------------------------------------------------------------
+Fibonacci recursive for	10. The mean time taken: 0 ms
+Fibonacci memoized for	10. The mean time taken: 0 ms
+Fibonacci iterative for	10. The mean time taken: 0 ms
+-------------------------------------------------------------
+Fibonacci recursive for	20. The mean time taken: 0 ms
+Fibonacci memoized for	20. The mean time taken: 0 ms
+Fibonacci iterative for	20. The mean time taken: 0 ms
+-------------------------------------------------------------
+Fibonacci recursive for	30. The mean time taken: 0 ms
+Fibonacci memoized for	30. The mean time taken: 0 ms
+Fibonacci iterative for	30. The mean time taken: 0 ms
+-------------------------------------------------------------
+Fibonacci recursive for	35. The mean time taken: 16 ms
+Fibonacci memoized for	35. The mean time taken: 0 ms
+Fibonacci iterative for	35. The mean time taken: 0 ms
+-------------------------------------------------------------
+Fibonacci recursive for	42. The mean time taken: 703 ms
+Fibonacci memoized for	42. The mean time taken: 0 ms
+Fibonacci iterative for	42. The mean time taken: 0 ms
+-------------------------------------------------------------
+Fibonacci memoized for	350000. The mean time taken: 0 ms
+Fibonacci iterative for	350000. The mean time taken: 16 ms
+-------------------------------------------------------------
+Fibonacci memoized for	700000. The mean time taken: 16 ms
+Fibonacci iterative for	700000. The mean time taken: 35 ms
+-------------------------------------------------------------
+Fibonacci memoized for	1400000. The mean time taken: 76 ms
+Fibonacci iterative for	1400000. The mean time taken: 50 ms
+-------------------------------------------------------------
+Fibonacci memoized for	2800000. The mean time taken: 141 ms
+Fibonacci iterative for	2800000. The mean time taken: 97 ms
+-------------------------------------------------------------
+Fibonacci memoized for	5600000. The mean time taken: 327 ms
+Fibonacci iterative for	5600000. The mean time taken: 218 ms

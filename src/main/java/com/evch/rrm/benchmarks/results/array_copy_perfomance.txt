@@ -1,0 +1,33 @@
+Test with arrays of different sizes
+Size = 1000.
+Using System.arraycopy. The mean time taken: 0 ms
+Using manual loop. The mean time taken: 3 ms
+Size = 10000.
+Using System.arraycopy. The mean time taken: 7 ms
+Using manual loop. The mean time taken: 26 ms
+Size = 100000.
+Using System.arraycopy. The mean time taken: 47 ms
+Using manual loop. The mean time taken: 194 ms
+Size = 1000000.
+Using System.arraycopy. The mean time taken: 467 ms
+Using manual loop. The mean time taken: 1830 ms
+Looks like O(n)
+
+------------------------------------
+Test with different shift positions
+Position to shift = 1.
+Using System.arraycopy. The mean time taken: 433 ms
+Using manual loop. The mean time taken: 1817 ms
+Position to shift = 100.
+Using System.arraycopy. The mean time taken: 436 ms
+Using manual loop. The mean time taken: 1750 ms
+Position to shift = 1000.
+Using System.arraycopy. The mean time taken: 430 ms
+Using manual loop. The mean time taken: 1737 ms
+Position to shift = 100000.
+Using System.arraycopy. The mean time taken: 390 ms
+Using manual loop. The mean time taken: 1567 ms
+Position to shift = 1000000.
+Using System.arraycopy. The mean time taken: 0 ms
+Using manual loop. The mean time taken: 0 ms
+Looks like O(log n)
