@@ -1,18 +1,11 @@
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class DemonstrationTests {
-    @Test
-    void thisTestShouldBeFailed() {
-        assertFalse(true);
-    }
-
-    @Disabled
-    @Test
-    void thisTestShouldBeSkipped() {
-    }
-
     @BeforeAll
     static void testWithBeforeAll() {
     }
@@ -29,7 +22,19 @@ public class DemonstrationTests {
     void testWithAfterEach() {
     }
 
-//    @ParameterizedTest
-//    void testWithAfterEach(String s) {
-//    }
+    @Test
+    void thisTestShouldBeFailed() {
+        fail();
+    }
+
+    @Disabled
+    @Test
+    void thisTestShouldBeSkipped() {
+    }
+
+    @ParameterizedTest()
+    @ValueSource(strings = {"string 1", "string 2", "string 3", "string 4", "string 5"})
+    void testWithParameterizedTest(String s) {
+        System.out.println(s);
+    }
 }

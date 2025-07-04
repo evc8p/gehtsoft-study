@@ -1,9 +1,9 @@
-import java.lang.annotation.Annotation;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class CustomTestRunner {
     public static void main(String[] args) {
@@ -12,11 +12,10 @@ public class CustomTestRunner {
     }
 
     private void runTests(Class<?>... testClasses) {
-        Map<Annotation, Map<Method, Annotation[]>> allMethods = new HashMap<>();
-        Method beforeAll = null;
-        Method beforeEach = null;
-        Method afterAll = null;
-        Method afterEach = null;
+        Method beforeAll;
+        Method beforeEach;
+        Method afterAll;
+        Method afterEach;
         int classesCounter = 0;
         int totalTests = 0;
         int passed = 0;
@@ -24,146 +23,216 @@ public class CustomTestRunner {
         int skipped = 0;
         long executionTime = System.currentTimeMillis();
         for (Class<?> testClass : testClasses) {
-            allMethods = new HashMap<>();
             beforeAll = null;
             beforeEach = null;
             afterAll = null;
             afterEach = null;
-            classesCounter++;
             System.out.printf("Run tests for %s\n", testClass.getSimpleName());
             try {
-                Class[] classesWithAnnotations = new Class[]{
-                        org.junit.jupiter.api.Test.class,
-                        org.junit.jupiter.params.ParameterizedTest.class,
-                        org.junit.jupiter.api.BeforeAll.class,
-                        org.junit.jupiter.api.BeforeEach.class,
-                        org.junit.jupiter.api.AfterEach.class,
-                        org.junit.jupiter.api.AfterAll.class
-                };
                 Object testClassInstance = testClass.getDeclaredConstructor().newInstance();
+                if (testClassInstance.getClass().isAnnotationPresent(Disabled.class)) {
+                    System.out.printf("Test class %s is disabled and skipped.", testClass);
+                    break;
+                }
+                classesCounter++;
+
                 Method[] methods = testClassInstance.getClass().getDeclaredMethods();
-
                 for (Method method : methods) {
-                    for (Class classWithAnnotation : classesWithAnnotations) {
-                        Annotation[] preciseAnnotation = method.getAnnotationsByType(classWithAnnotation);
-                        if (preciseAnnotation.length > 0) {
-                            // parse BeforeAll, BeforeEach, AfterAll, AfterEach first
-                            String annotations = List.of(method.getAnnotations()).toString();
-                            if (!annotations.contains("org.junit.jupiter.api.Disabled")) {
-                                if (annotations.contains("org.junit.jupiter.api.BeforeAll")) {
-                                    beforeAll = method;
-                                    break;
-                                }
-                                if (annotations.contains("org.junit.jupiter.api.BeforeEach")) {
-                                    beforeEach = method;
-                                    break;
-                                }
-                                if (annotations.contains("org.junit.jupiter.api.AfterAll")) {
-                                    afterAll = method;
-                                    break;
-                                }
-                                if (annotations.contains("org.junit.jupiter.api.AfterEach")) {
-                                    afterEach = method;
-                                    break;
-                                }
-                            }
-
-                            // parse the remaining methods
-                            if (allMethods.containsKey(preciseAnnotation[0])) {
-                                Map<Method, Annotation[]> map = allMethods.get(preciseAnnotation[0]);
-                                map.put(method, method.getAnnotations());
-                            } else {
-                                Map<Method, Annotation[]> map = new HashMap<>();
-                                map.put(method, method.getAnnotations());
-                                allMethods.put(preciseAnnotation[0], map);
-                            }
-                            break;
+                    if (!method.isAnnotationPresent(Disabled.class)) {
+                        // parse BeforeAll, BeforeEach, AfterAll, AfterEach first
+                        if (method.isAnnotationPresent(BeforeAll.class)) {
+                            beforeAll = method;
+                            continue;
+                        }
+                        if (method.isAnnotationPresent(BeforeEach.class)) {
+                            beforeEach = method;
+                            continue;
+                        }
+                        if (method.isAnnotationPresent(AfterAll.class)) {
+                            afterAll = method;
+                            continue;
+                        }
+                        if (method.isAnnotationPresent(AfterEach.class)) {
+                            afterEach = method;
                         }
                     }
                 }
 
                 // invoke the BeforeAll first
-                if (beforeAll != null) {
-                    try {
-                        System.out.println("BeforeAll is executed");
-                        beforeAll.invoke(testClassInstance);
-                        System.out.println("BeforeAll is done");
-                    } catch (Exception e) {
-                        System.err.println("Error when invoke BeforeAll: " + e.getMessage());
-                        e.printStackTrace(System.out);
-                        break;
-                    }
+                if (invokeMethod(beforeAll, testClassInstance) == -1) {
+                    failed++;
+                    break;
                 }
 
-                for (Annotation annotation : allMethods.keySet()) {
-                    for (Method method : allMethods.get(annotation).keySet()) {
-                        totalTests++;
-                        String annotations = List.of(allMethods.get(annotation).get(method)).toString();
-                        if (!annotations.contains("org.junit.jupiter.api.Disabled")) {
-                            if (beforeEach != null) {
-                                try {
-                                    beforeEach.invoke(testClassInstance);
-                                } catch (Exception e) {
-                                    failed++;
-                                    System.out.printf("✗ %s\n", method.getName());
-                                    System.err.println("Error when invoke BeforeEach: " + e.getMessage());
-                                    e.printStackTrace(System.out);
-                                    break;
-                                }
+                for (Method method : methods) {
+                    if (!method.isAnnotationPresent(Disabled.class)) {
+                        if (method.isAnnotationPresent(Test.class) && !method.isAnnotationPresent(ParameterizedTest.class)) {
+                            totalTests++;
+                            if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                failed++;
+                                break;
                             }
-                            if (annotations.contains("org.junit.jupiter.api.Test")
-                                    || annotations.contains("org.junit.jupiter.params.ParameterizedTest")) {
-                                long time = System.currentTimeMillis();
-                                try {
-                                    if (beforeEach != null) {
-                                        beforeEach.invoke(testClassInstance);
-                                    }
-                                    method.invoke(testClassInstance);
-                                    passed++;
-                                    if (afterEach != null) {
-                                        afterEach.invoke(testClassInstance);
-                                    }
-                                    System.out.printf("✓ %s (%d ms)\n", method.getName(), (System.currentTimeMillis() - time));
-                                } catch (Exception e) {
-                                    failed++;
-                                    System.out.printf("✗ %s (%d ms)\n", method.getName(), (System.currentTimeMillis() - time));
-                                }
+                            int i = invokeMethod(method, testClassInstance) == 0 ? passed++ : failed++;
+                            if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                failed++;
                             }
-                            if (afterEach != null) {
-                                try {
-                                    afterEach.invoke(testClassInstance);
-                                } catch (Exception e) {
-                                    System.err.println("Error when invoke AfterEach: " + e.getMessage());
-                                    e.printStackTrace(System.out);
-                                    break;
-                                }
-                            }
-                        } else {
-                            skipped++;
-                            System.out.println("- " + method.getName());
                         }
+                        if (method.isAnnotationPresent(ParameterizedTest.class)) {
+                            System.out.println("--- Parameterized test started ---");
+                            if (method.isAnnotationPresent(ValueSource.class)) {
+                                ValueSource valueSource = method.getAnnotation(ValueSource.class);
+                                for (short value : valueSource.shorts()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (byte value : valueSource.bytes()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (int value : valueSource.ints()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (long value : valueSource.longs()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (float value : valueSource.floats()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (double value : valueSource.doubles()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (char value : valueSource.chars()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (boolean value : valueSource.booleans()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (String value : valueSource.strings()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                }
+                                for (Class<?> value : valueSource.classes()) {
+                                    totalTests++;
+                                    if (invokeMethod(beforeEach, testClassInstance) == -1) {
+                                        failed++;
+                                        break;
+                                    }
+                                    System.out.print("With value: ");
+                                    int i = invokeMethod(method, testClassInstance, value) == 0 ? passed++ : failed++;
+                                    if (invokeMethod(afterEach, testClassInstance) == -1) {
+                                        failed++;
+                                    }
+                                }
+                            }
+                            System.out.println("--- Parameterized test completed ---");
+                        }
+                    } else {
+                        totalTests++;
+                        skipped++;
+                        System.out.println("- " + method.getName());
                     }
                 }
 
                 // invoke the AfterAll method last
-                if (afterAll != null) {
-                    try {
-                        System.out.println("AfterAll is executed");
-                        afterAll.invoke(testClassInstance);
-                        System.out.println("AfterAll is done");
-                    } catch (Exception e) {
-                        System.err.println("Error when invoke AfterAll: " + e.getMessage());
-                        e.printStackTrace(System.out);
-                    }
+                if (invokeMethod(afterAll, testClassInstance) == -1) {
+                    failed++;
+                    break;
                 }
             } catch (InstantiationException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace(System.out);
             } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace(System.out);
             } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace(System.out);
             } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace(System.out);
             }
         }
         System.out.println("\n=== Custom Test Runner Results ===");
@@ -173,6 +242,22 @@ public class CustomTestRunner {
         System.out.println("SKIPPED tests\t" + skipped);
         System.out.println("Total tests\t\t" + totalTests);
         System.out.printf("Total execution time %d ms\n", (System.currentTimeMillis() - executionTime));
-        System.out.printf("Success rate\t%.1f %%\n", (passed / (float) (totalTests - skipped) * 100.0F));
+        System.out.printf("Success rate\t%.1f %%\n", (100.0f * (float) passed / (float) totalTests));
+    }
+
+    private int invokeMethod(Method method, Object obj, Object... args) {
+        if (method != null) {
+            long time = System.currentTimeMillis();
+            try {
+                Object object = args == null ? method.invoke(obj) : method.invoke(obj, args);
+                System.out.printf("✓ %s (%d ms)\n", method.getName(), (System.currentTimeMillis() - time));
+                return 0;
+            } catch (Exception e) {
+                System.out.printf("✗ %s (%d ms)\n", method.getName(), (System.currentTimeMillis() - time));
+                e.printStackTrace(System.out);
+                return -1;
+            }
+        }
+        return 1;
     }
 }
