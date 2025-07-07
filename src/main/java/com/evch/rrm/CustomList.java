@@ -271,7 +271,7 @@ public class CustomList<E> implements List<E> {
 
         @Override
         public E next() {
-            return (E) get(cursor++);
+            return get(cursor++);
         }
 
         @Override
@@ -281,7 +281,7 @@ public class CustomList<E> implements List<E> {
 
         @Override
         public E previous() {
-            return (E) get(--cursor);
+            return get(--cursor);
         }
 
         @Override
@@ -305,14 +305,14 @@ public class CustomList<E> implements List<E> {
         @Override
         public void set(E e) {
             if (hasPrevious()) {
-                CustomList.this.set(cursor, e);
+                CustomList.this.set(previousIndex(), e);
             }
         }
 
         @Override
         public void add(E e) {
             if (hasPrevious()) {
-                CustomList.this.add(cursor - 1, e);
+                CustomList.this.add(previousIndex(), e);
                 cursor++;
             }
         }
@@ -353,7 +353,7 @@ public class CustomList<E> implements List<E> {
         final Object[] e = Arrays.copyOfRange(elements, 0, size);
         int hashCode = 1;
         for (Object o : e) {
-            hashCode = 31 * hashCode + (e == null ? 0 : e.hashCode());
+            hashCode += 31 * hashCode + (o == null ? 0 : o.hashCode());
         }
         return hashCode;
     }
