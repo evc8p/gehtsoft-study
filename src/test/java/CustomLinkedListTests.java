@@ -1,5 +1,4 @@
 import com.evch.rrm.CustomLinkedList;
-import com.evch.rrm.CustomQueue;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -137,7 +136,7 @@ public class CustomLinkedListTests {
         assertEquals(11, customLinkedList.size());
         customLinkedList.add(4, null);
         assertEquals(12, customLinkedList.size());
-        assertNull( customLinkedList.get(0));
+        assertNull(customLinkedList.get(0));
         assertEquals(1, customLinkedList.get(1));
         assertEquals(4, customLinkedList.get(5));
         assertNull(customLinkedList.get(11));
@@ -232,7 +231,7 @@ public class CustomLinkedListTests {
     @Test
     void removeFirstMethodShouldThrowsNoSuchElementExceptionForEmptyList() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
-        assertThrows(NoSuchElementException.class, () -> customLinkedList.removeLast());
+        assertThrows(NoSuchElementException.class, customLinkedList::removeLast);
     }
 
     @Test
@@ -245,7 +244,7 @@ public class CustomLinkedListTests {
     @Test
     void removeLastMethodShouldThrowsNoSuchElementExceptionForEmptyList() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
-        assertThrows(NoSuchElementException.class, () -> customLinkedList.removeLast(), "The list is empty.");
+        assertThrows(NoSuchElementException.class, customLinkedList::removeLast, "The list is empty.");
     }
 
     @Test
@@ -294,7 +293,7 @@ public class CustomLinkedListTests {
     @Test
     void lastIndexOfMethodShouldReturnMinus1IfObjectIsMissingFromListOrInEmptyList() {
         CustomLinkedList<String> customLinkedList = new CustomLinkedList<>();
-        assertEquals(-1, customLinkedList.lastIndexOf(1));
+        assertEquals(-1, customLinkedList.lastIndexOf(Integer.valueOf(1)));
         List<String> strings = List.of("one", "two", "three", "four", "five", "one", "six", "seven");
         customLinkedList.addAll(strings);
         assertEquals(-1, customLinkedList.lastIndexOf("ten"));
