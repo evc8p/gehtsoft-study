@@ -55,8 +55,18 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
 
     @Override
     public E poll() {
+        return pollFirst();
+    }
+
+    @Override
+    public E pollFirst() {
         final Node<E> f = first;
-        return f == null ? null : removeFirst();
+        if (first == null) {
+            return null;
+        }
+        E oldItem = first.item;
+        remove(getFirst());
+        return oldItem;
     }
 
     @Override
@@ -66,6 +76,11 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
 
     @Override
     public E peek() {
+        return peekFirst();
+    }
+
+    @Override
+    public E peekFirst() {
         final Node<E> f = first;
         return (f == null) ? null : f.item;
     }
@@ -216,7 +231,7 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
 
     @Override
     public E get(int index) {
-        checkPositionIndex(index);
+        checkElementIndex(index);
         if (size == 0) {
             return null;
         }
@@ -225,6 +240,7 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
 
     @Override
     public E set(int index, E element) {
+        checkElementIndex(index);
         final Node<E> node = getNode(index);
         E oldElement = node.item;
         node.item = element;
@@ -387,24 +403,18 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
 
     @Override
     public E getFirst() {
-        if (first == null) {
-            return null;
+        if (size == 0) {
+            throw new NoSuchElementException("The list is empty.");
         }
         return first.item;
     }
 
     @Override
     public E getLast() {
-        if (last == null) {
-            return null;
+        if (size == 0) {
+            throw new NoSuchElementException("The list is empty.");
         }
         return last.item;
-    }
-
-    @Override
-    public E peekFirst() {
-        final Node<E> f = first;
-        return (f == null) ? null : f.item;
     }
 
     @Override
@@ -430,16 +440,22 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
 
     @Override
     public E removeFirst() {
-        if (first == null) {
-            return null;
+        if (size == 0) {
+            throw new NoSuchElementException("The list is empty.");
         }
-        E oldItem = first.item;
-        remove(getFirst());
-        return oldItem;
+        return pollFirst();
     }
 
     @Override
     public E removeLast() {
+        if (size == 0) {
+            throw new NoSuchElementException("The list is empty.");
+        }
+        return pollLast();
+    }
+
+    @Override
+    public E pollLast() {
         if (last == null) {
             return null;
         }
@@ -451,18 +467,6 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
     @Override
     public CustomLinkedList<E> reversed() {
         return new ReverseOrderCustomLinkedListView();
-    }
-
-    @Override
-    public E pollFirst() {
-        final Node<E> f = first;
-        return (f == null) ? null : removeFirst();
-    }
-
-    @Override
-    public E pollLast() {
-        final Node<E> l = last;
-        return (l == null) ? null : removeLast();
     }
 
     private static class Node<E> {
@@ -505,13 +509,13 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
 
     private void checkElementIndex(int index) {
         if (index < 0 || index >= size) {
-            throw new IndexOutOfBoundsException("The index is out of range " + index);
+            throw new IndexOutOfBoundsException("The index is out of range " + index + "(out of 0-" + (size - 1) + ")");
         }
     }
 
     private void checkPositionIndex(int index) {
         if (index < 0 || index > size) {
-            throw new IndexOutOfBoundsException("The index is out of range " + index);
+            throw new IndexOutOfBoundsException("The index is out of range " + index + "(out of 0-" + size + ")");
         }
     }
 

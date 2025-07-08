@@ -1,8 +1,10 @@
 import com.evch.rrm.CustomLinkedList;
+import com.evch.rrm.CustomQueue;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -75,9 +77,9 @@ public class CustomLinkedListTests {
     }
 
     @Test
-    void getMethodOf0ShouldReturnNullForEmptyList() {
+    void getMethodOf0ShouldThrowsIndexOutOfBoundsExceptionForEmptyList() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
-        assertNull(customLinkedList.get(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.get(0));
     }
 
     @Test
@@ -85,8 +87,8 @@ public class CustomLinkedListTests {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
         List<Integer> integers = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         customLinkedList.addAll(integers);
-        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.get(-1), "The index is out of range -1");
-        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.get(10), "The index is out of range 10");
+        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.get(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.get(10));
     }
 
     @Test
@@ -101,7 +103,7 @@ public class CustomLinkedListTests {
     @Test
     void setMethodShouldGenerateErrorIndexIsOutOfRangeForEmptyList() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
-        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.set(0, null), "The index is out of range 0");
+        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.set(0, null));
     }
 
     @Test
@@ -109,8 +111,8 @@ public class CustomLinkedListTests {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
         List<Integer> integers = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         customLinkedList.addAll(integers);
-        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.set(-1, null), "The index is out of range -1");
-        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.set(10, null), "The index is out of range 10");
+        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.set(-1, null));
+        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.set(10, null));
     }
 
     @Test
@@ -165,13 +167,11 @@ public class CustomLinkedListTests {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
         List<Integer> integers = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         customLinkedList.addAll(integers);
-        assertThrows(IndexOutOfBoundsException.class,
-                () -> customLinkedList.addAll(11, integers),
-                "The index is out of range 11");
+        assertThrows(IndexOutOfBoundsException.class, () -> customLinkedList.addAll(11, integers));
     }
 
     @Test
-    void removeMethodForObjectShouldReturnListWithoutFirstOccurrenceOfObject() {
+    void removeMethodForObjectShouldRemoveFirstOccurrenceOfObject() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
         List<Integer> integers = List.of(1, 2, 2);
         customLinkedList.addAll(integers);
@@ -182,7 +182,7 @@ public class CustomLinkedListTests {
     }
 
     @Test
-    void removeMethodForFirstObjectShouldReturnListWithoutIt() {
+    void removeMethodForFirstObjectShouldRemoveIt() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
         List<Integer> integers = List.of(1, 2);
         customLinkedList.addAll(integers);
@@ -191,7 +191,6 @@ public class CustomLinkedListTests {
         assertEquals(2, customLinkedList.get(0));
         assertEquals(2, customLinkedList.getFirst());
         assertEquals(2, customLinkedList.getLast());
-
     }
 
     @Test
@@ -231,23 +230,29 @@ public class CustomLinkedListTests {
     }
 
     @Test
-    void removeFirstMethodShouldBeReturnNullValue() {
+    void removeFirstMethodShouldThrowsNoSuchElementExceptionForEmptyList() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
-        assertNull(customLinkedList.removeFirst());
-        assertEquals(0, customLinkedList.size());
-        assertNull(customLinkedList.get(0));
-        assertNull(customLinkedList.getFirst());
-        assertNull(customLinkedList.getLast());
+        assertThrows(NoSuchElementException.class, () -> customLinkedList.removeLast());
     }
 
     @Test
-    void removeLastMethodShouldBeReturnNullValue() {
+    void removeFirstMethodShouldRemoveHeadElement() {
+        CustomLinkedList<String> customLinkedList = new CustomLinkedList<>(List.of("one", "two"));
+        assertEquals("one", customLinkedList.removeFirst());
+        assertEquals("two", customLinkedList.getFirst());
+    }
+
+    @Test
+    void removeLastMethodShouldThrowsNoSuchElementExceptionForEmptyList() {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
-        assertNull(customLinkedList.removeLast());
-        assertEquals(0, customLinkedList.size());
-        assertNull(customLinkedList.get(0));
-        assertNull(customLinkedList.getFirst());
-        assertNull(customLinkedList.getLast());
+        assertThrows(NoSuchElementException.class, () -> customLinkedList.removeLast(), "The list is empty.");
+    }
+
+    @Test
+    void removeLastMethodShouldRemoveTailElement() {
+        CustomLinkedList<String> customLinkedList = new CustomLinkedList<>(List.of("one", "two"));
+        assertEquals("two", customLinkedList.removeLast());
+        assertEquals("one", customLinkedList.getLast());
     }
 
     @Test
@@ -360,5 +365,20 @@ public class CustomLinkedListTests {
         assertEquals(0, customLinkedList.indexOf("two"));
         assertEquals(1, customLinkedList.indexOf("nine"));
         assertEquals(2, customLinkedList.lastIndexOf("nine"));
+    }
+
+    @Test
+    void offerMethodShouldAddShouldAddElementToTailOfQueue() {
+        CustomLinkedList<String> customLinkedList = new CustomLinkedList<>(
+                List.of("one", "two", "three", "four", "five", "six", "seven")
+        );
+        customLinkedList.offer("eight");
+        assertEquals(8, customLinkedList.size());
+    }
+
+    @Test
+    void pollMethodShouldReturnNullForEmptyList() {
+        CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
+        assertNull(customLinkedList.poll());
     }
 }
