@@ -276,7 +276,7 @@ public class CustomList<E> implements List<E> {
 
         @Override
         public boolean hasPrevious() {
-            return cursor != 0;
+            return cursor > 0;
         }
 
         @Override

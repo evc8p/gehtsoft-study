@@ -1,8 +1,13 @@
 package com.evch.rrm;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
-public class CustomLinkedList<E> implements List<E> {
+public class CustomLinkedList<E> implements List<E>, Deque<E> {
     private int size = 0;
     private Node<E> first = null;
     private Node<E> last = null;
@@ -39,6 +44,33 @@ public class CustomLinkedList<E> implements List<E> {
     }
 
     @Override
+    public boolean offer(E e) {
+        return add(e);
+    }
+
+    @Override
+    public E remove() {
+        return removeFirst();
+    }
+
+    @Override
+    public E poll() {
+        final Node<E> f = first;
+        return f == null ? null : removeFirst();
+    }
+
+    @Override
+    public E element() {
+        return getFirst();
+    }
+
+    @Override
+    public E peek() {
+        final Node<E> f = first;
+        return (f == null) ? null : f.item;
+    }
+
+    @Override
     public void add(int index, E element) {
         checkPositionIndex(index);
         if (index == size) {
@@ -63,6 +95,16 @@ public class CustomLinkedList<E> implements List<E> {
     public boolean addAll(Collection<? extends E> c) {
         c.forEach(this::add);
         return false;
+    }
+
+    @Override
+    public void push(E e) {
+        addFirst(e);
+    }
+
+    @Override
+    public E pop() {
+        return removeFirst();
     }
 
     @Override
@@ -129,6 +171,11 @@ public class CustomLinkedList<E> implements List<E> {
     }
 
     @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        return List.super.removeIf(filter);
+    }
+
+    @Override
     public boolean retainAll(Collection<?> c) {
         for (Node<E> node = first; node != null; node = node.next) {
             if (!c.contains(node.item)) {
@@ -142,6 +189,16 @@ public class CustomLinkedList<E> implements List<E> {
             }
         }
         return false;
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator<E> operator) {
+        List.super.replaceAll(operator);
+    }
+
+    @Override
+    public void sort(Comparator<? super E> c) {
+        List.super.sort(c);
     }
 
     @Override
@@ -211,6 +268,11 @@ public class CustomLinkedList<E> implements List<E> {
     }
 
     @Override
+    public <T> T[] toArray(IntFunction<T[]> generator) {
+        return List.super.toArray(generator);
+    }
+
+    @Override
     public int indexOf(Object o) {
         int index = 0;
         if (o == null) {
@@ -258,6 +320,16 @@ public class CustomLinkedList<E> implements List<E> {
     }
 
     @Override
+    public void forEach(Consumer<? super E> action) {
+        List.super.forEach(action);
+    }
+
+    @Override
+    public Iterator<E> descendingIterator() {
+        return new DescListItr();
+    }
+
+    @Override
     public ListIterator<E> listIterator() {
         return new ListItr();
     }
@@ -269,7 +341,26 @@ public class CustomLinkedList<E> implements List<E> {
 
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
-        return List.of();
+        List<E> list = new ArrayList<>(toIndex - fromIndex);
+        for (Node<E> node = getNode(indexOf(fromIndex)); node != getNode(indexOf(toIndex)); node = node.next) {
+            list.add(node.item);
+        }
+        return list;
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return List.super.spliterator();
+    }
+
+    @Override
+    public Stream<E> stream() {
+        return List.super.stream();
+    }
+
+    @Override
+    public Stream<E> parallelStream() {
+        return List.super.parallelStream();
     }
 
     @Override
@@ -280,6 +371,18 @@ public class CustomLinkedList<E> implements List<E> {
     @Override
     public void addLast(E e) {
         add(size, e);
+    }
+
+    @Override
+    public boolean offerFirst(E e) {
+        addFirst(e);
+        return true;
+    }
+
+    @Override
+    public boolean offerLast(E e) {
+        addLast(e);
+        return true;
     }
 
     @Override
@@ -296,6 +399,33 @@ public class CustomLinkedList<E> implements List<E> {
             return null;
         }
         return last.item;
+    }
+
+    @Override
+    public E peekFirst() {
+        final Node<E> f = first;
+        return (f == null) ? null : f.item;
+    }
+
+    @Override
+    public E peekLast() {
+        final Node<E> l = last;
+        return (l == null) ? null : l.item;
+    }
+
+    @Override
+    public boolean removeFirstOccurrence(Object o) {
+        return remove(o);
+    }
+
+    @Override
+    public boolean removeLastOccurrence(Object o) {
+        int index = lastIndexOf(o);
+        if (index > -1) {
+            remove(index);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -316,6 +446,23 @@ public class CustomLinkedList<E> implements List<E> {
         E oldItem = last.item;
         remove(getLast());
         return oldItem;
+    }
+
+    @Override
+    public CustomLinkedList<E> reversed() {
+        return new ReverseOrderCustomLinkedListView();
+    }
+
+    @Override
+    public E pollFirst() {
+        final Node<E> f = first;
+        return (f == null) ? null : removeFirst();
+    }
+
+    @Override
+    public E pollLast() {
+        final Node<E> l = last;
+        return (l == null) ? null : removeLast();
     }
 
     private static class Node<E> {
@@ -391,7 +538,7 @@ public class CustomLinkedList<E> implements List<E> {
 
         @Override
         public boolean hasPrevious() {
-            return cursor != 0;
+            return cursor > 0;
         }
 
         @Override
@@ -430,6 +577,82 @@ public class CustomLinkedList<E> implements List<E> {
                 CustomLinkedList.this.add(previousIndex(), e);
                 cursor++;
             }
+        }
+    }
+
+    private class DescListItr implements ListIterator<E> {
+        private int cursor = size - 1;
+
+        public DescListItr() {
+        }
+
+        public DescListItr(int index) {
+            checkElementIndex(index);
+            this.cursor = index;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor > -1;
+        }
+
+        @Override
+        public E next() {
+            return get(cursor--);
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return cursor < size - 1;
+        }
+
+        @Override
+        public E previous() {
+            return get(++cursor);
+        }
+
+        @Override
+        public int nextIndex() {
+            return cursor;
+        }
+
+        @Override
+        public int previousIndex() {
+            return cursor + 1;
+        }
+
+        @Override
+        public void remove() {
+            if (hasPrevious()) {
+                CustomLinkedList.this.remove(previousIndex());
+                cursor++;
+            }
+        }
+
+        @Override
+        public void set(E e) {
+            if (hasPrevious()) {
+                CustomLinkedList.this.set(previousIndex(), e);
+            }
+        }
+
+        @Override
+        public void add(E e) {
+            if (hasPrevious()) {
+                CustomLinkedList.this.add(previousIndex(), e);
+                cursor--;
+            }
+        }
+    }
+
+    // Stub class. Only the list is returned in reverse order
+    class ReverseOrderCustomLinkedListView extends CustomLinkedList {
+        public CustomLinkedList<E> getReversedList() {
+            CustomLinkedList<E> reversedList = new CustomLinkedList<>();
+            for (Node<E> node = last; node != null; node = node.prev) {
+                reversedList.addFirst(node.item);
+            }
+            return reversedList;
         }
     }
 }
