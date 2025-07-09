@@ -1,6 +1,4 @@
-package com.evch.rrm.benchmarks;
-
-import com.evch.rrm.CustomLinkedList;
+package com.evch.rrm;
 
 import java.util.Collection;
 import java.util.EmptyStackException;

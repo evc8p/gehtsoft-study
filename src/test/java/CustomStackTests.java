@@ -1,4 +1,4 @@
-import com.evch.rrm.benchmarks.CustomStack;
+import com.evch.rrm.CustomStack;
 import org.junit.jupiter.api.Test;
 
 import java.util.EmptyStackException;
