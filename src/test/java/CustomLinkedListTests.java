@@ -380,4 +380,16 @@ public class CustomLinkedListTests {
         CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
         assertNull(customLinkedList.poll());
     }
+
+    @Test
+    void reversedMethodShouldReturnNullForEmptyList() {
+        CustomLinkedList<Integer> customLinkedList = new CustomLinkedList<>();
+        for (int i = 0; i < 100; i++) {
+            customLinkedList.add(i);
+        }
+        CustomLinkedList<Integer> customLinkedList1 = customLinkedList.reversed();
+        assertEquals(100, customLinkedList1.size());
+        assertEquals(99, customLinkedList1.getFirst());
+        assertEquals(0, customLinkedList1.getLast());
+    }
 }

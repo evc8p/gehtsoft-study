@@ -464,11 +464,6 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
         return oldItem;
     }
 
-    @Override
-    public CustomLinkedList<E> reversed() {
-        return new ReverseOrderCustomLinkedListView();
-    }
-
     private static class Node<E> {
         E item;
         CustomLinkedList.Node<E> next;
@@ -649,12 +644,23 @@ public class CustomLinkedList<E> implements List<E>, Deque<E> {
         }
     }
 
+    @Override
+    public CustomLinkedList<E> reversed() {
+        return new ReverseOrderCustomLinkedListView(this).getReversedList();
+    }
+
     // Stub class. Only the list is returned in reverse order
-    class ReverseOrderCustomLinkedListView extends CustomLinkedList {
+    public class ReverseOrderCustomLinkedListView extends CustomLinkedList {
+        private CustomLinkedList<E> list;
+
+        public ReverseOrderCustomLinkedListView(CustomLinkedList<E> list) {
+            this.list = list;
+        }
+
         public CustomLinkedList<E> getReversedList() {
             CustomLinkedList<E> reversedList = new CustomLinkedList<>();
-            for (Node<E> node = last; node != null; node = node.prev) {
-                reversedList.addFirst(node.item);
+            for (Node<E> node = list.last; node != null; node = node.prev) {
+                reversedList.add(node.item);
             }
             return reversedList;
         }
