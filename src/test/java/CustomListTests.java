@@ -324,4 +324,104 @@ public class CustomListTests {
         Map<String, String> map = Map.of("1", "null", "3", "4", "5", "");
         assertFalse(customList.equals(map));
     }
+
+    @Test
+    void retainAllMethodShouldRemoveAllElementsOfList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "5"});
+        List<String> list = List.of("one");
+        boolean result = customList.retainAll(list);
+        assertTrue(result);
+        assertTrue(customList.isEmpty());
+    }
+
+    @Test
+    void retainAllMethodShouldKeepTwoItemsInList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "1"});
+        List<String> list = List.of("1");
+        boolean result = customList.retainAll(list);
+        assertTrue(result);
+        assertEquals(2, customList.size());
+        assertEquals("1", customList.get(0));
+        assertEquals("1", customList.get(1));
+    }
+
+    @Test
+    void retainAllMethodShouldKeepAllItemsInList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "1"});
+        List<String> list = List.of("1", "null", "3", "4");
+        boolean result = customList.retainAll(list);
+        assertFalse(result);
+        assertEquals(5, customList.size());
+        assertEquals("1", customList.get(0));
+        assertEquals("null", customList.get(1));
+        assertEquals("3", customList.get(2));
+        assertEquals("4", customList.get(3));
+        assertEquals("1", customList.get(4));
+    }
+
+    @Test
+    void removeAllMethodShouldRemoveAllElementsOfList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"one", "one", "one", "one", "one"});
+        List<String> list = List.of("one");
+        boolean result = customList.removeAll(list);
+        assertTrue(result);
+        assertTrue(customList.isEmpty());
+    }
+
+    @Test
+    void removeAllMethodShouldKeepTwoItemsInList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "1"});
+        List<String> list = List.of("null", "1");
+        boolean result = customList.removeAll(list);
+        assertTrue(result);
+        assertEquals(2, customList.size());
+        assertEquals("3", customList.get(0));
+        assertEquals("4", customList.get(1));
+    }
+
+    @Test
+    void removeAllMethodShouldKeepAllItemsInList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "1"});
+        List<String> list = List.of("7", "nulls", "30", "40");
+        boolean result = customList.removeAll(list);
+        assertFalse(result);
+        assertEquals(5, customList.size());
+        assertEquals("1", customList.get(0));
+        assertEquals("null", customList.get(1));
+        assertEquals("3", customList.get(2));
+        assertEquals("4", customList.get(3));
+        assertEquals("1", customList.get(4));
+    }
+
+    @Test
+    void toArrayMethodShouldReturnNewArrayWithAllElementsInList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "1"});
+        Object[] newArray = customList.toArray();
+        assertEquals("1", newArray[0]);
+        assertEquals("null", newArray[1]);
+        assertEquals("3", newArray[2]);
+    }
+
+    @Test
+    void toArrayObjectsMethodShouldReturnNewArrayWithAllElementsInList() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "1"});
+        Object[] newArray = customList.toArray(new String[0]);
+        assertEquals("1", newArray[0]);
+        assertEquals("null", newArray[1]);
+        assertEquals("3", newArray[2]);
+    }
+
+    @Test
+    void toArrayObjectsMethodShouldReturnNewArrayWithAllElementsInListAndNullsInTail() {
+        CustomList<String> customList = new CustomList<>(new String[]{"1", "null", "3", "4", "1"});
+        Object[] newArray = customList.toArray(new String[10]);
+        assertEquals("1", newArray[0]);
+        assertEquals("null", newArray[1]);
+        assertEquals("3", newArray[2]);
+        assertNull(newArray[5]);
+        assertNull(newArray[6]);
+        assertNull(newArray[7]);
+        assertNull(newArray[8]);
+        assertNull(newArray[9]);
+    }
 }
