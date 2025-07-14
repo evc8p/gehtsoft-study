@@ -1,0 +1,10 @@
+Bulk Addition Tests. 10_000_000 iterations
+					min		max		average
+hashmap			    101ms	397ms	249ms
+customHashMap		92ms	404ms	248ms
+
+
+Add/Remove Tests. 10_000_000 iterations
+					min		max		average
+hashmap			    116ms	138ms	127ms
+customHashMap		100ms	147ms	123ms
