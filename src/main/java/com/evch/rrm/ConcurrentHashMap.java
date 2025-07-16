@@ -2,24 +2,25 @@ package com.evch.rrm;
 
 import java.util.*;
 
-public class CustomHashMap<K, V> implements Map<K, V> {
+public class ConcurrentHashMap<K, V> implements Map<K, V> {
     private static final int DEFAULT_CAPACITY = 16;
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     private int capacity;
     private float loadFactor;
     private int size = 0;
-    private Node<K, V>[] buckets;
+    private Node[] buckets;
     private int modCount = 0;
+    Object monitorDuringChanges = new Object();
 
-    public CustomHashMap() {
+    public ConcurrentHashMap() {
         this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
-    public CustomHashMap(int capacity) {
+    public ConcurrentHashMap(int capacity) {
         this(capacity, DEFAULT_LOAD_FACTOR);
     }
 
-    public CustomHashMap(int capacity, float loadFactor) {
+    public ConcurrentHashMap(int capacity, float loadFactor) {
         if (capacity < 0) {
             throw new IllegalArgumentException("Illegal initial capacity: " + capacity);
         }
@@ -31,7 +32,7 @@ public class CustomHashMap<K, V> implements Map<K, V> {
         this.buckets = new Node[capacity];
     }
 
-    public CustomHashMap(Map<? extends K, ? extends V> m) {
+    public ConcurrentHashMap(Map<? extends K, ? extends V> m) {
         this.capacity = Math.max(m.size(), DEFAULT_CAPACITY);
         this.loadFactor = DEFAULT_LOAD_FACTOR;
         this.buckets = new Node[this.capacity];
@@ -90,32 +91,34 @@ public class CustomHashMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(K key, V value) {
-        if (((float) size) >= capacity * loadFactor) {
-            resize();
-        }
-        V oldValue = null;
-        int hashKey = hash(key);
-        Node<K, V> newNode = new Node<>(hashKey, key, value, null);
-        int index = hashKey & (capacity - 1);
-        if (buckets[index] == null) {
-            buckets[index] = newNode;
-            size++;
-        } else {
-            for (Node<K, V> node = buckets[index]; node != null; node = node.next) {
-                if (node.key == null && key == null || node.key != null && node.hash == hashKey && node.key.equals(key)) {
-                    oldValue = node.value;
-                    node.value = value;
-                    break;
-                }
-                if (node.next == null) {
-                    node.next = newNode;
-                    size++;
-                    break;
+        synchronized (monitorDuringChanges) {
+            if (((float) size) >= capacity * loadFactor) {
+                resize();
+            }
+            V oldValue = null;
+            int hashKey = hash(key);
+            Node<K, V> newNode = new Node<>(hashKey, key, value, null);
+            int index = hashKey & (capacity - 1);
+            if (buckets[index] == null) {
+                buckets[index] = newNode;
+                size++;
+            } else {
+                for (Node<K, V> node = buckets[index]; node != null; node = node.next) {
+                    if (node.key == null && key == null || node.key != null && node.hash == hashKey && node.key.equals(key)) {
+                        oldValue = node.value;
+                        node.value = value;
+                        break;
+                    }
+                    if (node.next == null) {
+                        node.next = newNode;
+                        size++;
+                        break;
+                    }
                 }
             }
+            modCount++;
+            return oldValue;
         }
-        modCount++;
-        return oldValue;
     }
 
     private void resize() {
@@ -154,39 +157,43 @@ public class CustomHashMap<K, V> implements Map<K, V> {
 
     @Override
     public V remove(Object key) {
-        V oldValue = null;
-        if (!isEmpty()) {
-            int index = hash(key) & (capacity - 1);
-            Node<K, V> prevNode = null;
-            for (Node<K, V> node = buckets[index]; node != null; node = node.next) {
-                if (key == null && node.key == null || key != null && key.equals(node.key)) {
-                    oldValue = node.value;
-                    if (node.next == null) {
-                        buckets[index] = null;
-                    } else {
-                        if (prevNode == null) {
-                            buckets[index] = node.next;
+        synchronized (monitorDuringChanges) {
+            V oldValue = null;
+            if (!isEmpty()) {
+                int index = hash(key) & (capacity - 1);
+                Node<K, V> prevNode = null;
+                for (Node<K, V> node = buckets[index]; node != null; node = node.next) {
+                    if (key == null && node.key == null || key != null && key.equals(node.key)) {
+                        oldValue = node.value;
+                        if (node.next == null) {
+                            buckets[index] = null;
                         } else {
-                            prevNode.next = node.next;
+                            if (prevNode == null) {
+                                buckets[index] = node.next;
+                            } else {
+                                prevNode.next = node.next;
+                            }
                         }
+                        size--;
+                        modCount++;
+                        return oldValue;
                     }
-                    size--;
-                    modCount++;
-                    return oldValue;
+                    prevNode = node;
                 }
-                prevNode = node;
             }
+            return null;
         }
-        return null;
     }
 
     @Override
     public void clear() {
-        for (int i = 0; i < buckets.length; i++) {
-            buckets[i] = null;
+        synchronized (monitorDuringChanges) {
+            for (int i = 0; i < buckets.length; i++) {
+                buckets[i] = null;
+            }
+            size = 0;
+            modCount++;
         }
-        size = 0;
-        modCount++;
     }
 
     @Override
@@ -228,7 +235,7 @@ public class CustomHashMap<K, V> implements Map<K, V> {
         return entries;
     }
 
-    static class Node<K, V> implements Map.Entry<K, V> {
+    class Node<K, V> implements Map.Entry<K, V> {
         final int hash;
         final K key;
         V value;
@@ -258,9 +265,11 @@ public class CustomHashMap<K, V> implements Map<K, V> {
         }
 
         public final V setValue(V newValue) {
-            V oldValue = value;
-            value = newValue;
-            return oldValue;
+            synchronized (monitorDuringChanges) {
+                V oldValue = value;
+                value = newValue;
+                return oldValue;
+            }
         }
 
         public final boolean equals(Object o) {
@@ -278,7 +287,7 @@ public class CustomHashMap<K, V> implements Map<K, V> {
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
-    public static final class Entry<K, V> implements Map.Entry<K, V> {
+    public final class Entry<K, V> implements Map.Entry<K, V> {
         K key;
         V value;
 
@@ -299,9 +308,11 @@ public class CustomHashMap<K, V> implements Map<K, V> {
 
         @Override
         public V setValue(V value) {
-            V oldValue = value;
-            this.value = value;
-            return oldValue;
+            synchronized (monitorDuringChanges) {
+                V oldValue = value;
+                this.value = value;
+                return oldValue;
+            }
         }
     }
 }

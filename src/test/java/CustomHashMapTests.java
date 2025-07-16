@@ -297,6 +297,4 @@ public class CustomHashMapTests {
         }
         assertEquals(1_000_000, customHashMap.size());
     }
-
-    // Todo тесты на конструкторы, расширение массива, использование дерева.
 }

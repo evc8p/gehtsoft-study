@@ -1,5 +1,6 @@
 package com.evch.rrm.benchmarks;
 
+import com.evch.rrm.ConcurrentHashMap;
 import com.evch.rrm.CustomHashMap;
 
 import java.util.HashMap;
@@ -10,8 +11,9 @@ public class MapBenchmark {
         MapBenchmark benchmark = new MapBenchmark();
         Map<Integer, Integer> hashmap;
         Map<Integer, Integer> customHashMap;
+        Map<Integer, Integer> concurrentHashMap;
 
-//         sleep to start and prepare jconsole
+        // sleep to start and prepare jconsole
 //        try {
 //            Thread.sleep(25000);
 //        } catch (InterruptedException e) {
@@ -22,19 +24,23 @@ public class MapBenchmark {
         int iterations = 10_000_000;
         hashmap = new HashMap<>();
         customHashMap = new CustomHashMap<>();
+        concurrentHashMap = new ConcurrentHashMap<>();
         System.out.println("\nBulk Addition Tests. " + iterations + " iterations");
         System.out.println("\t\t\t\t\tmin\t\tmax\t\taverage");
-        benchmark.bulkAdditionTest("hashmap", hashmap, iterations);
-        benchmark.bulkAdditionTest("customHashMap", customHashMap, iterations);
+        benchmark.bulkAdditionTest("hashmap\t\t\t", hashmap, iterations);
+        benchmark.bulkAdditionTest("customHashMap\t", customHashMap, iterations);
+        benchmark.bulkAdditionTest("concurrentHashMap", concurrentHashMap, iterations);
 
         // Add/Remove Tests
         iterations = 10_000_000;
         hashmap = new HashMap<>();
         customHashMap = new CustomHashMap<>();
+        concurrentHashMap = new ConcurrentHashMap<>();
         System.out.println("\n\nAdd/Remove Tests. " + iterations + " iterations");
         System.out.println("\t\t\t\t\tmin\t\tmax\t\taverage");
-        benchmark.addRemoveTest("hashmap", hashmap, iterations);
-        benchmark.addRemoveTest("customHashMap", customHashMap, iterations);
+        benchmark.addRemoveTest("hashmap\t\t\t", hashmap, iterations);
+        benchmark.addRemoveTest("customHashMap\t", customHashMap, iterations);
+        benchmark.addRemoveTest("concurrentHashMap", concurrentHashMap, iterations);
     }
 
     public void bulkAdditionTest(String text, Map<Integer, Integer> map, int iterations) {
@@ -58,7 +64,7 @@ public class MapBenchmark {
                 }
             }
         }
-        System.out.printf(text + "\t\t\t%dms\t\t%dms\t\t%dms\n", min, max, (max + min) / 2);
+        System.out.printf(text + "\t%dms\t\t%dms\t\t%dms\n", min, max, (max + min) / 2);
     }
 
     public void addRemoveTest(String text, Map<Integer, Integer> map, int iterations) {
@@ -82,6 +88,6 @@ public class MapBenchmark {
                 }
             }
         }
-        System.out.printf(text + "\t\t\t%dms\t\t%dms\t\t%dms\n", min, max, (max + min) / 2);
+        System.out.printf(text + "\t%dms\t\t%dms\t\t%dms\n", min, max, (max + min) / 2);
     }
 }
