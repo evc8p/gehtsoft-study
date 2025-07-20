@@ -10,6 +10,9 @@ public class CustomHashMap<K, V> implements Map<K, V> {
     private int size = 0;
     private Node<K, V>[] buckets;
     private int modCount = 0;
+    private boolean isResizing = false;
+
+    private boolean isAddedNode = true;
 
     public CustomHashMap() {
         this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
@@ -95,37 +98,54 @@ public class CustomHashMap<K, V> implements Map<K, V> {
         }
         V oldValue = null;
         int hashKey = hash(key);
-        Node<K, V> newNode = new Node<>(hashKey, key, value, null);
+        Node<K, V> newNode = newNode(hashKey, key, value, null);
         int index = hashKey & (capacity - 1);
         if (buckets[index] == null) {
             buckets[index] = newNode;
+            isAddedNode = true;
             size++;
         } else {
             for (Node<K, V> node = buckets[index]; node != null; node = node.next) {
                 if (node.key == null && key == null || node.key != null && node.hash == hashKey && node.key.equals(key)) {
                     oldValue = node.value;
                     node.value = value;
+                    isAddedNode = false;
                     break;
                 }
                 if (node.next == null) {
                     node.next = newNode;
+                    isAddedNode = true;
                     size++;
                     break;
                 }
             }
         }
+        afterNodePut(newNode);
         modCount++;
         return oldValue;
     }
 
+    protected Node<K,V> afterNodePut(Node<K, V> node) {
+        return node;
+    }
+
+    protected Node<K,V> newNode(int hashKey, K key, V value, Node<K,V> o) {
+        return afterNodeCreate(new Node<>(hashKey, key, value, null));
+    }
+
+    protected Node<K,V> afterNodeCreate(Node<K, V> node) {
+        return node;
+    }
+
     private void resize() {
+        isResizing = true;
         this.capacity *= 2;
         Node<K, V>[] oldBuckets = buckets;
         this.buckets = new Node[capacity];
         for (Node<K, V> oldNode : oldBuckets) {
             for (; oldNode != null; oldNode = oldNode.next) {
                 int hashKey = hash(oldNode.key);
-                Node<K, V> newNode = new Node<>(hashKey, oldNode.key, oldNode.value, null);
+                Node<K, V> newNode = newNode(hashKey, oldNode.key, oldNode.value, null);
                 int index = hashKey & (capacity - 1);
                 if (buckets[index] == null) {
                     buckets[index] = newNode;
@@ -143,6 +163,7 @@ public class CustomHashMap<K, V> implements Map<K, V> {
                 }
             }
         }
+        isResizing = false;
     }
 
     @Override
@@ -273,7 +294,7 @@ public class CustomHashMap<K, V> implements Map<K, V> {
         }
     }
 
-    private int hash(Object key) {
+    static int hash(Object key) {
         int h;
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
@@ -303,5 +324,13 @@ public class CustomHashMap<K, V> implements Map<K, V> {
             this.value = value;
             return oldValue;
         }
+    }
+
+    public boolean getIsResizing() {
+        return isResizing;
+    }
+
+    public boolean getIsAddedNode() {
+        return isAddedNode;
     }
 }

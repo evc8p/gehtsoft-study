@@ -10,7 +10,8 @@ public class ConcurrentHashMap<K, V> implements Map<K, V> {
     private int size = 0;
     private Node[] buckets;
     private int modCount = 0;
-    Object monitorDuringChanges = new Object();
+    protected Object monitorDuringChanges = new Object();
+    private boolean isResizing = false;
 
     public ConcurrentHashMap() {
         this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
@@ -97,7 +98,7 @@ public class ConcurrentHashMap<K, V> implements Map<K, V> {
             }
             V oldValue = null;
             int hashKey = hash(key);
-            Node<K, V> newNode = new Node<>(hashKey, key, value, null);
+            Node<K, V> newNode = newNode(hashKey, key, value, null);
             int index = hashKey & (capacity - 1);
             if (buckets[index] == null) {
                 buckets[index] = newNode;
@@ -122,13 +123,14 @@ public class ConcurrentHashMap<K, V> implements Map<K, V> {
     }
 
     private void resize() {
+        isResizing = true;
         this.capacity *= 2;
         Node<K, V>[] oldBuckets = buckets;
         this.buckets = new Node[capacity];
         for (Node<K, V> oldNode : oldBuckets) {
             for (; oldNode != null; oldNode = oldNode.next) {
                 int hashKey = hash(oldNode.key);
-                Node<K, V> newNode = new Node<>(hashKey, oldNode.key, oldNode.value, null);
+                Node<K, V> newNode = newNode(hashKey, oldNode.key, oldNode.value, null);
                 int index = hashKey & (capacity - 1);
                 if (buckets[index] == null) {
                     buckets[index] = newNode;
@@ -145,6 +147,20 @@ public class ConcurrentHashMap<K, V> implements Map<K, V> {
                     }
                 }
             }
+        }
+        isResizing = false;
+    }
+
+    protected Node<K,V> newNode(int hash, K key, V value, Node<K,V> next) {
+        synchronized (monitorDuringChanges) {
+            Node<K, V> newNode = new Node<>(hash, key, value, next);
+            return afterNodeCreate(newNode);
+        }
+    }
+
+    protected Node<K,V> afterNodeCreate(Node<K, V> node) {
+        synchronized (monitorDuringChanges) {
+            return node;
         }
     }
 
