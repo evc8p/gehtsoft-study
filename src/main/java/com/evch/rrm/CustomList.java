@@ -66,18 +66,25 @@ public class CustomList<E> implements List<E> {
 
     @Override
     public Object[] toArray() {
-        return new Object[0];
+        Object[] array = new Object[size];
+        System.arraycopy(elements, 0, array, 0, size);
+        return array;
     }
 
     @Override
     public Object[] toArray(Object[] a) {
-        return new Object[0];
+        Object[] array = new Object[Math.max(a.length, size)];
+        System.arraycopy(elements, 0, array, 0, size);
+        if (array.length > size) {
+            Arrays.fill(a, size, array.length - 1, null);
+        }
+        return array;
     }
 
     @Override
-    public boolean add(E o) {
+    public boolean add(E e) {
         ensureCapacity(size + 1);
-        elements[size++] = o;
+        elements[size++] = e;
         return true;
     }
 
@@ -86,19 +93,20 @@ public class CustomList<E> implements List<E> {
         int index = indexOf(o);
         if (index > -1) {
             remove(index);
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Override
     public boolean addAll(Collection c) {
         Objects.requireNonNull(c, "The collection must not be null ");
-        final Collection objects = c;
-        for (Object object : objects) {
+        final Collection<E> objects = (Collection<E>) c;
+        for (E object : objects) {
             if (Objects.isNull(object)) {
                 add(null);
             } else {
-                add((E) object);
+                add(object);
             }
         }
         return true;
@@ -121,17 +129,31 @@ public class CustomList<E> implements List<E> {
 
     @Override
     public boolean retainAll(Collection c) {
-        return false;
+        boolean result = false;
+        for (int i = 0; i < size; i++) {
+            if (!c.contains(elements[i])) {
+                remove(i--);
+                result = true;
+            }
+        }
+        return result;
     }
 
     @Override
     public boolean removeAll(Collection c) {
-        return false;
+        boolean result = false;
+        for (Object element : c) {
+            while (contains(element)) {
+                remove(element);
+                result = true;
+            }
+        }
+        return result;
     }
 
     @Override
     public boolean containsAll(Collection c) {
-        final Collection objects = c;
+        final Collection<E> objects = (Collection<E>) c;
         for (Object object : objects) {
             if (indexOf(object) == -1) {
                 return false;
@@ -271,17 +293,17 @@ public class CustomList<E> implements List<E> {
 
         @Override
         public E next() {
-            return (E) get(cursor++);
+            return get(cursor++);
         }
 
         @Override
         public boolean hasPrevious() {
-            return cursor != 0;
+            return cursor > 0;
         }
 
         @Override
         public E previous() {
-            return (E) get(--cursor);
+            return get(--cursor);
         }
 
         @Override
@@ -305,14 +327,14 @@ public class CustomList<E> implements List<E> {
         @Override
         public void set(E e) {
             if (hasPrevious()) {
-                CustomList.this.set(cursor, e);
+                CustomList.this.set(previousIndex(), e);
             }
         }
 
         @Override
         public void add(E e) {
             if (hasPrevious()) {
-                CustomList.this.add(cursor - 1, e);
+                CustomList.this.add(previousIndex(), e);
                 cursor++;
             }
         }
@@ -353,7 +375,7 @@ public class CustomList<E> implements List<E> {
         final Object[] e = Arrays.copyOfRange(elements, 0, size);
         int hashCode = 1;
         for (Object o : e) {
-            hashCode = 31 * hashCode + (e == null ? 0 : e.hashCode());
+            hashCode += 31 * hashCode + (o == null ? 0 : o.hashCode());
         }
         return hashCode;
     }
