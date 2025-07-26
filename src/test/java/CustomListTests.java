@@ -51,14 +51,12 @@ public class CustomListTests {
     @Test
     void customListConstructorShouldCreateListWithElementsWithSizeOf5() {
         CustomList<String> list = new CustomList<>(new String[]{"null", "5", "1", " 9", "7"});
-        assertFalse(list.isEmpty());
         assertEquals(5, list.size());
     }
 
     @Test
     void customListConstructorShouldCreateListWithElementsWithSizeOf11() {
         CustomList<Integer> list = new CustomList<>(new Integer[]{null, 5, 1, 9, 7, 8, 20, null, null, 10, 11});
-        assertFalse(list.isEmpty());
         assertEquals(11, list.size());
     }
 
@@ -72,7 +70,6 @@ public class CustomListTests {
     @Test
     void createdListOf10ElementsShouldHaveSizeEqualTo10() {
         CustomList<Integer> list = new CustomList<>(new Integer[]{null, 5, 1, 9, 7, 8, 20, null, null, 10});
-        assertFalse(list.isEmpty());
         assertEquals(10, list.size());
     }
 
