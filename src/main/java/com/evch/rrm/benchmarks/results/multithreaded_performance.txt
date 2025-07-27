@@ -1,0 +1,8 @@
+Sum with parallel Stream with 1 iteration: 21 ms (21936 mks)
+Sum with parallel Threads with 1 iteration: 31 ms (31943 mks)
+Sum with parallel Stream with 10 iterations: 3 ms (3538 mks)
+Sum with parallel Threads with 10 iterations: 8 ms (8627 mks)
+Sum with parallel Stream with 100 iterations: 3 ms (3322 mks)
+Sum with parallel Threads with 100 iterations: 3 ms (3835 mks)
+Sum with parallel Stream with 1000 iterations: 3 ms (3297 mks)
+Sum with parallel Threads with 1000 iterations: 5 ms (5219 mks)
