@@ -16,16 +16,18 @@ public class MultithreadedPerformance {
 
     public static void main(String[] args) {
         MultithreadedPerformance multithreadedPerformance = new MultithreadedPerformance();
-        IntStream.range(0, NUMBER_OF_ELEMENTS).parallel().forEach(e -> array[e] = (short) (e % 32767));
+        IntStream.range(0, NUMBER_OF_ELEMENTS).parallel().forEach(e -> array[e] = 1);
         String format = "Sum with parallel %s with %d iteration%s: %d ms (%d mks)\n";
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(
                 "src/main/java/com/evch/rrm/benchmarks/results/multithreaded_performance.txt"))) {
             for (int i : new int[]{1, 10, 100, 1000}) {
+                if (i > array.length) i = array.length;
                 long start = System.nanoTime();
                 multithreadedPerformance.sumWithParallelStream(i);
                 long end = System.nanoTime() - start;
                 bw.write(String.format(format, "Stream", i, i == 1 ? "" : "s", end / 1_000_000L, end / 1_000L));
+
                 start = System.nanoTime();
                 multithreadedPerformance.sumWithParallelThreads(i);
                 end = System.nanoTime() - start;
@@ -37,7 +39,13 @@ public class MultithreadedPerformance {
     }
 
     private long sumWithParallelStream(int threadsCount) {
-        return IntStream.range(0, NUMBER_OF_ELEMENTS).map(i -> array[i]).parallel().sum();
+        int indexesInThread = NUMBER_OF_ELEMENTS / threadsCount;
+        final LongAdder sum = new LongAdder();
+        for (int startIndex = 0; startIndex < NUMBER_OF_ELEMENTS; startIndex += indexesInThread) {
+            int endIndex = startIndex + indexesInThread;
+            sum.add(IntStream.range(startIndex, endIndex).map(i -> array[i]).parallel().sum());
+        }
+        return sum.sum();
     }
 
     private long sumWithParallelThreads(int threadsCount) {
@@ -45,7 +53,7 @@ public class MultithreadedPerformance {
         final LongAdder sum = new LongAdder();
         List<Thread> threads = new ArrayList<>(threadsCount);
         for (int startIndex = 0; startIndex < NUMBER_OF_ELEMENTS; startIndex += indexesInThread) {
-            int endIndex = startIndex + indexesInThread - 1;
+            int endIndex = startIndex + indexesInThread;
             threads.add(Thread.startVirtualThread(getTaskOfSumByIndexes(startIndex, endIndex, sum)));
         }
         for (Thread thread : threads) {
