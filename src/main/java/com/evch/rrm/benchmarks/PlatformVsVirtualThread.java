@@ -113,7 +113,9 @@ public class PlatformVsVirtualThread {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+                if (line.toLowerCase().contains("thread")) {
+                    System.out.println(line);
+                }
             }
         }
         process.waitFor();
