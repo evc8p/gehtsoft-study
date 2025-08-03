@@ -14,7 +14,7 @@ public class CustomListLocksPerformanceTest {
         CustomListLocksPerformanceTest synchronizedCustomListPerformanceTest = new CustomListLocksPerformanceTest();
 
         CustomList<Integer> customList = new CustomList<>();
-        System.out.printf("SynchronizedListDecorator. Adding a million elements with two threads took %d ms\n",
+        System.out.printf("CustomList. Adding a million elements with two threads took %d ms\n",
                 synchronizedCustomListPerformanceTest.timeInMsForAddingElements(customList));
 
         SynchronizedListDecorator<Integer> synchronizedListDecorator =
