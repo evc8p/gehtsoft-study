@@ -18,7 +18,7 @@ public class PlatformVsVirtualThread {
         long timeVirtual = platformVsVirtualThread.runVirtualThreads(NUMBER_OF_THREADS);
         long timePlatform = platformVsVirtualThread.runPlatformThreads(NUMBER_OF_THREADS);
 
-        Thread.sleep(20000);
+//        Thread.sleep(20000);
 
         out.printf("The execution of virtual threads took %d ms.\n", timeVirtual / 1_000_000);
         out.println("----------------------------");
@@ -26,6 +26,7 @@ public class PlatformVsVirtualThread {
     }
 
     private long runPlatformThreads(int threadsCount) throws IOException, InterruptedException {
+        //-XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=detail
         gc();
         gc();
         Thread.yield();
