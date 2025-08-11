@@ -101,7 +101,7 @@ public class CustomExecutorService implements ExecutorService {
     }
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, TimeUnit unit) {
         isAwaitTermination = true;
         lock.lock();
         long timeoutNs = unit.toNanos(timeout);
@@ -126,8 +126,8 @@ public class CustomExecutorService implements ExecutorService {
     public <T> Future<T> submit(Callable<T> task) {
         FutureTask<T> future = null;
         if (canAddTask() && task != null) {
-            future = new FutureTask<T>(task);
-            tasks.offer(future);
+            future = new FutureTask<>(task);
+            tasks.add(future);
         }
         return future;
     }
@@ -249,16 +249,11 @@ public class CustomExecutorService implements ExecutorService {
             es.submit(() -> {
                 while (true) {
                     int s = sum.get();
-                    if (s < 1000 && sum.compareAndSet(s, s + 1) || s >= 1000) {
+                    if (s >= 1000 || sum.compareAndSet(s, s + 1)) {
                         break;
                     }
                 }
             });
-        }
-        try {
-            TimeUnit.MILLISECONDS.sleep(100);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
         es.shutdown();
         try {
