@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -22,12 +21,11 @@ public class CustomExecutorService implements ExecutorService {
     private final List<Thread> workers;
     private final BlockingQueue<Runnable> tasks;
     private final int maxCorePoolSize;
-    private boolean useVirtualThreads;
+    private final boolean useVirtualThreads;
     private boolean isShutdown = false;
     private boolean isShutdownNow = false;
     private boolean isAwaitTermination = false;
     private final Lock lock = new ReentrantLock();
-    private Condition terminate = lock.newCondition();
 
     public CustomExecutorService(int corePoolSize, boolean useVirtualThreads) {
         if (corePoolSize < 1) {
@@ -50,11 +48,7 @@ public class CustomExecutorService implements ExecutorService {
 
     private void startThreadsExecutor() {
         Thread.ofVirtual().start(() -> {
-            final List<Thread> completedWorkers = new LinkedList<>();
-            while (true) {
-                if (isTerminated() && !isAwaitTermination) {
-                    break;
-                }
+            while (!isTerminated() || isAwaitTermination) {
                 try {
                     if (workers.size() < maxCorePoolSize && !isShutdownNow) {
                         Runnable task = tasks.poll(waitingForNewTasksTimeoutMs, TimeUnit.MILLISECONDS);
@@ -64,13 +58,7 @@ public class CustomExecutorService implements ExecutorService {
                     }
                     long time = System.currentTimeMillis();
                     do {
-                        for (Thread worker : workers) {
-                            if (!worker.isAlive() || worker.isInterrupted()) {
-                                completedWorkers.add(worker);
-                            }
-                        }
-                        workers.removeAll(completedWorkers);
-                        completedWorkers.clear();
+                        workers.removeIf(worker -> !worker.isAlive() || worker.isInterrupted());
                     } while (workers.size() == maxCorePoolSize
                             && (System.currentTimeMillis() - time) < waitingWorkersTimeoutMs);
                     if (workers.size() == maxCorePoolSize) {
