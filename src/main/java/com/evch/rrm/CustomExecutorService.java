@@ -22,9 +22,9 @@ public class CustomExecutorService implements ExecutorService {
     private final BlockingQueue<Runnable> tasks;
     private final int maxCorePoolSize;
     private final boolean useVirtualThreads;
-    private boolean isShutdown = false;
-    private boolean isShutdownNow = false;
-    private boolean isAwaitTermination = false;
+    private volatile boolean isShutdown = false;
+    private volatile boolean isShutdownNow = false;
+    private volatile boolean isAwaitTermination = false;
     private final Lock lock = new ReentrantLock();
 
     public CustomExecutorService(int corePoolSize, boolean useVirtualThreads) {
