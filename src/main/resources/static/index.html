@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Static Content Test</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+<h1>Static Content Demo</h1>
+<p>This is <strong>index.html</strong> served at <code>/</code>.</p>
+
+<h2>Static Files Check</h2>
+<ul>
+    <li><a href="style.css">CSS file</a></li>
+    <li><a href="script.js">JS file</a></li>
+    <li><a href="images/logo.png">PNG image</a></li>
+    <li><a href="images/photo1.jpg">JPG image</a></li>
+    <li><a href="images/banner.gif">GIF image</a></li>
+    <li><a href="favicon.ico">ICO file</a></li>
+</ul>
+
+<h2>Dynamic API Test</h2>
+<button onclick="loadTime()">Get /api/time</button>
+<pre id="timeOutput"></pre>
+
+<button onclick="loadStats()">Get /api/stats</button>
+<pre id="statsOutput"></pre>
+
+<form id="echoForm">
+    <textarea id="echoInput" rows="4" cols="40" placeholder="Write something..."></textarea><br>
+    <button type="submit">Send to /api/echo</button>
+</form>
+<pre id="echoOutput"></pre>
+</body>
+</html>
