@@ -1,6 +1,8 @@
 package com.evch.rrm.webserver;
 
 import com.evch.rrm.CustomExecutorService;
+import lombok.Getter;
+import lombok.Setter;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -25,6 +27,9 @@ public class CustomWebServer {
     private final String userDirStaticResources = userDirResources + "static/";
     private ServerSocket serverSocket;
     private volatile boolean running = false;
+    @Getter
+    @Setter
+    private volatile boolean isKeepAlive = true;
 
     public CustomWebServer(int port, int threadPoolSize, boolean useVirtualThreads) {
         if (port < 0 || port > 65535) {
@@ -51,7 +56,6 @@ public class CustomWebServer {
 
             // Keep servers running
             Thread.sleep(60000); // Run for 1 minute
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -68,20 +72,21 @@ public class CustomWebServer {
             throw new SocketException("The server socket can not be created. " + e.getStackTrace());
         }
         serverSocket.setSoTimeout(1000);
-        executor.setWaitingWorkersTimeoutMs(Integer.MAX_VALUE);
+        executor.setWaitingWorkersTimeoutMs(10000);
         Thread.ofVirtual().start(() -> {
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    executor.submit(() -> {
+                    executor.execute(() -> {
                         Socket finalClientSocket = null;
                         try {
+                            boolean isKeepAlive = true;
                             finalClientSocket = clientSocket;
-                            while (!finalClientSocket.isClosed() && (running || !Thread.currentThread().isInterrupted())) {
-                                handleClient(finalClientSocket);
+                            while (!finalClientSocket.isClosed() && running && !Thread.currentThread().isInterrupted() && isKeepAlive) {
+                                isKeepAlive = handleClient(finalClientSocket) && this.isKeepAlive;
                             }
                         } finally {
-                            if (finalClientSocket != null) {
+                            if (finalClientSocket != null && !finalClientSocket.isClosed()) {
                                 try {
                                     finalClientSocket.close();
                                 } catch (IOException e) {
@@ -104,7 +109,7 @@ public class CustomWebServer {
         executor.awaitTermination(20, TimeUnit.SECONDS);
     }
 
-    private void handleClient(Socket clientSocket) {
+    private boolean handleClient(Socket clientSocket) {
         Map<String, String> requestEntries = parseAndExtractRequest(clientSocket);
         if (checkRequest(requestEntries)) {
             if (requestEntries.get("get") != null) {
@@ -153,6 +158,7 @@ public class CustomWebServer {
         } else {
             send404(clientSocket);
         }
+        return !(requestEntries.containsKey("connection") && requestEntries.get("connection").contains("close"));
     }
 
     private boolean checkRequest(Map<String, String> headers) {
@@ -207,7 +213,8 @@ public class CustomWebServer {
     }
 
     private void sendFileInResponse(ContentTypes contentType, String filePath, Socket socket) {
-        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
+        try {
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             Path p = Paths.get(filePath);
             try (InputStream in = Files.newInputStream(p)) {
                 out.write(makeResponseHeaders("200", "OK", contentType.getContentType(), Files.size(p)).getBytes(StandardCharsets.UTF_8));
@@ -216,6 +223,7 @@ public class CustomWebServer {
                 while ((n = in.read(buf)) != -1) {
                     out.write(buf, 0, n);
                 }
+                out.flush();
             } catch (IOException e) {
                 send404(socket);
             }
@@ -225,9 +233,11 @@ public class CustomWebServer {
     }
 
     private void sendTextInResponse(ContentTypes contentType, String text, Socket socket) {
-        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
+        try {
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             out.write(makeResponseHeaders("200", "OK", contentType.getContentType(), text.length()).getBytes(StandardCharsets.UTF_8));
             out.write(text.getBytes(StandardCharsets.UTF_8));
+            out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -239,16 +249,20 @@ public class CustomWebServer {
     }
 
     private void send400(Socket socket) {
-        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
+        try {
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             out.write(("HTTP/1.1 400 Bad Request\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private void send404(Socket socket) {
-        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
+        try {
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             out.write(("HTTP/1.1 404 Not Found\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

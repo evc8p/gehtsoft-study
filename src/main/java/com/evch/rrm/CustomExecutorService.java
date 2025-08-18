@@ -172,7 +172,6 @@ public class CustomExecutorService implements ExecutorService {
         return null;
     }
 
-    //
     @Override
     public void execute(Runnable command) {
         if (canAddTask() && command != null) {
@@ -282,5 +281,9 @@ public class CustomExecutorService implements ExecutorService {
             throw new RuntimeException(e);
         }
         return (System.nanoTime() - time) / 1_000_000;
+    }
+
+    public int getWorkersSize() {
+        return workers.size();
     }
 }
