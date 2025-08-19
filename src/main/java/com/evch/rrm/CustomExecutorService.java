@@ -186,6 +186,7 @@ public class CustomExecutorService implements ExecutorService {
     private void testPerformanceComparison() {
         int[] poolSizes = new int[]{10, 50, 100, 500};
         int numberOfTasks = 10000;
+        System.out.println("Performance comparison");
         for (int poolSize : poolSizes) {
             ExecutorService tpe = Executors.newFixedThreadPool(poolSize);
             ExecutorService cesPlatform = new CustomExecutorService(poolSize, false);
@@ -204,6 +205,7 @@ public class CustomExecutorService implements ExecutorService {
         ExecutorService cesPlatform = new CustomExecutorService(poolSize, false);
         ExecutorService cesVirtual = new CustomExecutorService(poolSize, true);
 
+        System.out.println("Concurrent task execution");
         System.out.printf("Count 1000 with Executors.newFixedThreadPool(pool size: %d). Result: %d\n", poolSize, submit1000TasksAndCount1000(tpe));
         System.out.printf("Count 1000 with CustomExecutorService (platform tasks)(pool size: %d). Result: %d\n", poolSize, submit1000TasksAndCount1000(cesPlatform));
         System.out.printf("Count 1000 with CustomExecutorService (virtual tasks)(pool size: %d). Result: %d\n", poolSize, submit1000TasksAndCount1000(cesVirtual));
@@ -217,6 +219,7 @@ public class CustomExecutorService implements ExecutorService {
         ExecutorService cesVirtual = new CustomExecutorService(numberOfWorkers, true);
 
         int numberOfTasks = 5000;
+        System.out.println("Shutdown behavior test");
         System.out.printf("Time to add+shutdown tasks to Executors.newFixedThreadPool: %d ms\n", submitAndShutdownTasksWithSleep5S(numberOfTasks, tpe));
         System.out.printf("Time to add+shutdown tasks to CustomExecutorService (platform tasks): %d ms\n", submitAndShutdownTasksWithSleep5S(numberOfTasks, cesPlatform));
         System.out.printf("Time to add+shutdown tasks to CustomExecutorService (virtual tasks): %d ms\n", submitAndShutdownTasksWithSleep5S(numberOfTasks, cesVirtual));
@@ -235,7 +238,7 @@ public class CustomExecutorService implements ExecutorService {
         }
         es.shutdownNow();
         try {
-            System.out.println("result of the awaitTermination: " + es.awaitTermination(10, TimeUnit.SECONDS));
+            es.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -254,9 +257,14 @@ public class CustomExecutorService implements ExecutorService {
                 }
             });
         }
+        try {
+            TimeUnit.MILLISECONDS.sleep(500);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         es.shutdown();
         try {
-            System.out.println("result of the awaitTermination: " + es.awaitTermination(10, TimeUnit.SECONDS));
+            es.awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
