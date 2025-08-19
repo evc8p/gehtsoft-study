@@ -284,7 +284,7 @@ public class CustomExecutorService implements ExecutorService {
         }
         es.shutdown();
         try {
-            System.out.println("result of the awaitTermination: " + es.awaitTermination(10, TimeUnit.SECONDS));
+            es.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
