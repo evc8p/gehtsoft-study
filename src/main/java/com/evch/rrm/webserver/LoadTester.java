@@ -64,6 +64,7 @@ public class LoadTester { // chatGPT создал
             conn.setRequestMethod("GET");
             conn.setRequestProperty("User-Agent", "Mozilla/5.0");
             conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Connection", "keep-alive");
 
             int responseCode = conn.getResponseCode();
             try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {

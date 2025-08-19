@@ -206,6 +206,12 @@ public class CustomWebServer {
                 }
                 headers.put("body", new String(body));
             }
+        } catch (SocketException e) {
+            if ("Connection reset".equals(e.getMessage())) {
+                System.out.println("Client closed connection prematurely");
+            } else {
+                e.printStackTrace();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
