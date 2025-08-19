@@ -192,9 +192,12 @@ public class CustomExecutorService implements ExecutorService {
             ExecutorService cesPlatform = new CustomExecutorService(poolSize, false);
             ExecutorService cesVirtual = new CustomExecutorService(poolSize, true);
 
-            System.out.printf("Time to add/shutdown now tasks to Executors.newFixedThreadPool(pool size: %d): %d ms\n", poolSize, submitAndShutdownNowTasksWithSleep(numberOfTasks, tpe, 10));
-            System.out.printf("Time to add/shutdown now tasks to CustomExecutorService (platform tasks)(pool size: %d): %d ms\n", poolSize, submitAndShutdownNowTasksWithSleep(numberOfTasks, cesPlatform, 10));
-            System.out.printf("Time to add/shutdown now tasks to CustomExecutorService (virtual tasks)(pool size: %d): %d ms\n", poolSize, submitAndShutdownNowTasksWithSleep(numberOfTasks, cesVirtual, 10));
+            System.out.printf("Time to add/shutdown now tasks to Executors.newFixedThreadPool(pool size: %d): %d ms\n", poolSize,
+                    submitAndShutdownNowTasksWithSleep(numberOfTasks, tpe, 10));
+            System.out.printf("Time to add/shutdown now tasks to CustomExecutorService (platform tasks)(pool size: %d): %d ms\n",
+                    poolSize, submitAndShutdownNowTasksWithSleep(numberOfTasks, cesPlatform, 10));
+            System.out.printf("Time to add/shutdown now tasks to CustomExecutorService (virtual tasks)(pool size: %d): %d ms\n",
+                    poolSize, submitAndShutdownNowTasksWithSleep(numberOfTasks, cesVirtual, 10));
         }
         System.out.println("\n---------------------------------------------------------\n");
     }
@@ -206,9 +209,12 @@ public class CustomExecutorService implements ExecutorService {
         ExecutorService cesVirtual = new CustomExecutorService(poolSize, true);
 
         System.out.println("Concurrent task execution");
-        System.out.printf("Count 1000 with Executors.newFixedThreadPool(pool size: %d). Result: %d\n", poolSize, submit1000TasksAndCount1000(tpe));
-        System.out.printf("Count 1000 with CustomExecutorService (platform tasks)(pool size: %d). Result: %d\n", poolSize, submit1000TasksAndCount1000(cesPlatform));
-        System.out.printf("Count 1000 with CustomExecutorService (virtual tasks)(pool size: %d). Result: %d\n", poolSize, submit1000TasksAndCount1000(cesVirtual));
+        System.out.printf("Count 1000 with Executors.newFixedThreadPool(pool size: %d). Result: %d\n", poolSize,
+                submit1000TasksAndCount1000(tpe));
+        System.out.printf("Count 1000 with CustomExecutorService (platform tasks)(pool size: %d). Result: %d\n", poolSize,
+                submit1000TasksAndCount1000(cesPlatform));
+        System.out.printf("Count 1000 with CustomExecutorService (virtual tasks)(pool size: %d). Result: %d\n", poolSize,
+                submit1000TasksAndCount1000(cesVirtual));
         System.out.println("\n---------------------------------------------------------\n");
     }
 
@@ -220,9 +226,12 @@ public class CustomExecutorService implements ExecutorService {
 
         int numberOfTasks = 5000;
         System.out.println("Shutdown behavior test");
-        System.out.printf("Time to add+shutdown tasks to Executors.newFixedThreadPool: %d ms\n", submitAndShutdownTasksWithSleep5S(numberOfTasks, tpe));
-        System.out.printf("Time to add+shutdown tasks to CustomExecutorService (platform tasks): %d ms\n", submitAndShutdownTasksWithSleep5S(numberOfTasks, cesPlatform));
-        System.out.printf("Time to add+shutdown tasks to CustomExecutorService (virtual tasks): %d ms\n", submitAndShutdownTasksWithSleep5S(numberOfTasks, cesVirtual));
+        System.out.printf("Time to add+shutdown tasks to Executors.newFixedThreadPool: %d ms\n",
+                submitAndShutdownTasksWithSleep5S(numberOfTasks, tpe));
+        System.out.printf("Time to add+shutdown tasks to CustomExecutorService (platform tasks): %d ms\n",
+                submitAndShutdownTasksWithSleep5S(numberOfTasks, cesPlatform));
+        System.out.printf("Time to add+shutdown tasks to CustomExecutorService (virtual tasks): %d ms\n",
+                submitAndShutdownTasksWithSleep5S(numberOfTasks, cesVirtual));
     }
 
     private long submitAndShutdownNowTasksWithSleep(int numberOfTasks, ExecutorService es, long sleepTime) {
@@ -276,7 +285,7 @@ public class CustomExecutorService implements ExecutorService {
         for (int i = 0; i < numberOfTasks; i++) {
             es.submit(() -> {
                 try {
-                    TimeUnit.MILLISECONDS.sleep(10);
+                    TimeUnit.MILLISECONDS.sleep(5);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -284,7 +293,7 @@ public class CustomExecutorService implements ExecutorService {
         }
         es.shutdown();
         try {
-            es.awaitTermination(10, TimeUnit.SECONDS);
+            es.awaitTermination(20, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
