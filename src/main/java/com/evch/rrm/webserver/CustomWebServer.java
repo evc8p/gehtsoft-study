@@ -82,9 +82,12 @@ public class CustomWebServer {
                         try {
                             boolean isKeepAlive = true;
                             finalClientSocket = clientSocket;
+                            finalClientSocket.setSoTimeout(5000);
                             while (!finalClientSocket.isClosed() && running && !Thread.currentThread().isInterrupted() && isKeepAlive) {
                                 isKeepAlive = handleClient(finalClientSocket) && this.isKeepAlive;
                             }
+                        } catch (SocketException e) {
+                            e.printStackTrace();
                         } finally {
                             if (finalClientSocket != null && !finalClientSocket.isClosed()) {
                                 try {
