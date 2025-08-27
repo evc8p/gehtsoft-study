@@ -1,11 +1,16 @@
 package com.evch.rrm.webserver;
 
 import com.evch.rrm.CustomExecutorService;
+import com.evch.rrm.webserver.annotations.Delete;
+import com.evch.rrm.webserver.annotations.Get;
+import com.evch.rrm.webserver.annotations.Post;
+import com.evch.rrm.webserver.annotations.Put;
 import lombok.Getter;
 import lombok.Setter;
-import org.json.JSONObject;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -14,22 +19,23 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 public class CustomWebServer {
+    private final static String USER_DIR_RESOURCES = System.getProperty("user.dir") + "/src/main/resources/";
+    private final static String USER_DIR_STATIC_RESOURCES = USER_DIR_RESOURCES + "static";
     private final int port;
     private final CustomExecutorService executor;
-    private final String userDirResources = System.getProperty("user.dir") + "/src/main/resources/";
-    private final String userDirStaticResources = userDirResources + "static/";
     private ServerSocket serverSocket;
     private volatile boolean running = false;
     @Getter
     @Setter
     private volatile boolean isKeepAlive = true;
+    private Object controllerInstance;
+    private final Map<String, Method> controllerMethods = new HashMap<>();
 
     public CustomWebServer(int port, int threadPoolSize, boolean useVirtualThreads) {
         if (port < 0 || port > 65535) {
@@ -37,14 +43,17 @@ public class CustomWebServer {
         }
         this.port = port;
         this.executor = new CustomExecutorService(threadPoolSize, useVirtualThreads);
+        registerController(RestController.class);
     }
 
     public static void main(String[] args) {
         // Test with virtual threads
         CustomWebServer virtualServer = new CustomWebServer(8080, 100, true);
+        virtualServer.registerController(RestController.class);
 
         // Test with platform threads
         CustomWebServer platformServer = new CustomWebServer(8081, 50, false);
+        platformServer.registerController(RestController.class);
 
         try {
             virtualServer.start();
@@ -55,12 +64,45 @@ public class CustomWebServer {
             System.out.println("Platform thread server: http://localhost:8081");
 
             // Keep servers running
-            Thread.sleep(60000); // Run for 1 minute
+            Thread.sleep(30000); // Run for 1 minute
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             virtualServer.stop();
             platformServer.stop();
+        }
+    }
+
+    public void registerController(Class<?> controller) {
+        if (this.controllerInstance != null && this.controllerInstance.getClass().equals(controller)) return;
+
+        try {
+            this.controllerInstance = controller.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        readControllerMethods();
+    }
+
+    private void readControllerMethods() {
+        Method[] methods = controllerInstance.getClass().getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.isAnnotationPresent(Get.class)) {
+                Get getAnnotation = method.getAnnotation(Get.class);
+                controllerMethods.put("get." + getAnnotation.endPoint(), method);
+            }
+            if (method.isAnnotationPresent(Post.class)) {
+                Post postAnnotation = method.getAnnotation(Post.class);
+                controllerMethods.put("post." + postAnnotation.endPoint(), method);
+            }
+            if (method.isAnnotationPresent(Put.class)) {
+                Put putAnnotation = method.getAnnotation(Put.class);
+                controllerMethods.put("put." + putAnnotation.endPoint(), method);
+            }
+            if (method.isAnnotationPresent(Delete.class)) {
+                Delete deleteAnnotation = method.getAnnotation(Delete.class);
+                controllerMethods.put("delete." + deleteAnnotation.endPoint(), method);
+            }
         }
     }
 
@@ -82,12 +124,11 @@ public class CustomWebServer {
                         try {
                             boolean isKeepAlive = true;
                             finalClientSocket = clientSocket;
-                            finalClientSocket.setSoTimeout(5000);
+                            finalClientSocket.setSoTimeout(2000);
                             while (!finalClientSocket.isClosed() && running && !Thread.currentThread().isInterrupted() && isKeepAlive) {
                                 isKeepAlive = handleClient(finalClientSocket) && this.isKeepAlive;
                             }
-                        } catch (SocketException e) {
-                            e.printStackTrace();
+                        } catch (SocketException ignored) {
                         } finally {
                             if (finalClientSocket != null && !finalClientSocket.isClosed()) {
                                 try {
@@ -98,7 +139,7 @@ public class CustomWebServer {
                             }
                         }
                     });
-                } catch (SocketTimeoutException ste) {
+                } catch (SocketTimeoutException | SocketException ignored) {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -115,48 +156,22 @@ public class CustomWebServer {
     private boolean handleClient(Socket clientSocket) {
         Map<String, String> requestEntries = parseAndExtractRequest(clientSocket);
         if (checkRequest(requestEntries)) {
-            if (requestEntries.get("get") != null) {
-                String response;
-                String source = requestEntries.get("get");
-                switch (source) {
-                    case "/api/time":
-                        response = """
-                                {
-                                    "currentServerTime": "%s"
-                                }""";
-                        sendTextInResponse(ContentTypes.JSON, String.format(response, LocalDateTime.now()), clientSocket);
-                        break;
-                    case "/api/stats":
-                        response = """
-                                {
-                                    "stats": "%s"
-                                }""";
-                        sendTextInResponse(ContentTypes.JSON, String.format(response, "Server has no stats"), clientSocket);
-                        break;
-                    default:
-                        ContentTypes contentType = ContentTypes.HTML;
-                        try {
-                            contentType = ContentTypes.getContentType(getSourceExtensionOrSlash(source));
-                        } catch (NoSuchElementException e) {
-                            send404(clientSocket);
-                        }
-                        int questionMarkIndex = source.indexOf("?");
-                        String sourceName = (questionMarkIndex == -1) ? source : source.substring(0, questionMarkIndex);
-                        sendFileInResponse(contentType, userDirStaticResources + (source.equals("/") ? "index.html" : sourceName), clientSocket);
+            Response response = new Response();
+            String http_method = requestEntries.get("http_method");
+            String source = getSourceOrSlash(requestEntries.get(http_method));
+            Method method = controllerMethods.get(http_method + "." + source);
+            if (method != null) {
+                try {
+                    response = (Response) method.invoke(controllerInstance, requestEntries);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    e.printStackTrace();
                 }
-            }
-
-            if (requestEntries.get("post") != null) {
-                String response;
-                String source = requestEntries.get("post");
-                if (source.equals("/api/echo")) {
-                    response = """
-                            {
-                                "echoOutput": "Server saw your message: %s"
-                            }""";
-                    sendTextInResponse(ContentTypes.JSON, String.format(response,
-                            new JSONObject(requestEntries.get("body")).get("message")), clientSocket);
+                switch (response.getDataType()) {
+                    case JSON -> sendTextInResponse(ContentTypes.JSON, response.getData(), clientSocket);
+                    case FILE -> sendFileInResponse(response.getData(), clientSocket);
                 }
+            } else {
+                sendFileInResponse(USER_DIR_STATIC_RESOURCES + source, clientSocket);
             }
         } else {
             send404(clientSocket);
@@ -176,13 +191,14 @@ public class CustomWebServer {
                 && headers.containsKey("content-length"));
     }
 
-    private Map<String, String> parseAndExtractRequest(Socket clientSocket) {
+    private Map<String, String> parseAndExtractRequest(final Socket clientSocket) {
         Map<String, String> headers = new HashMap<>();
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String line = in.readLine();
             String[] data = line.split(" ", 3);
-            headers.put(data[0].trim().toLowerCase(), data[1].trim().toLowerCase());
+            headers.put("http_method", data[0].trim().toLowerCase());
+            headers.put(data[0].trim().toLowerCase(), data[1].trim());
             headers.put("http_type", data[2].trim().toLowerCase());
 
             int contentLength = 0;
@@ -215,26 +231,35 @@ public class CustomWebServer {
             } else {
                 e.printStackTrace();
             }
+        } catch (SocketTimeoutException ignored) {
         } catch (IOException e) {
             e.printStackTrace();
         }
         return headers;
     }
 
-    private void sendFileInResponse(ContentTypes contentType, String filePath, Socket socket) {
+    private void sendFileInResponse(String filePath, Socket socket) {
         try {
+            ContentTypes contentType = ContentTypes.getContentType(getSourceExtensionOrSlash(filePath));
             BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             Path p = Paths.get(filePath);
-            try (InputStream in = Files.newInputStream(p)) {
-                out.write(makeResponseHeaders("200", "OK", contentType.getContentType(), Files.size(p)).getBytes(StandardCharsets.UTF_8));
+            InputStream in = null;
+            try {
+                in = Files.newInputStream(p);
+                out.write(makeResponseHeaders("200", "OK", contentType.getContentType(),
+                        Files.size(p)).getBytes(StandardCharsets.UTF_8));
                 byte[] buf = new byte[8192];
                 int n;
                 while ((n = in.read(buf)) != -1) {
                     out.write(buf, 0, n);
                 }
                 out.flush();
-            } catch (IOException e) {
+            } catch (NoSuchElementException | IOException e) {
                 send404(socket);
+            } finally {
+                if (in != null) {
+                    in.close();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -258,8 +283,7 @@ public class CustomWebServer {
     }
 
     private void send400(Socket socket) {
-        try {
-            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
             out.write(("HTTP/1.1 400 Bad Request\r\n\r\n").getBytes(StandardCharsets.UTF_8));
             out.flush();
         } catch (IOException e) {
@@ -268,8 +292,7 @@ public class CustomWebServer {
     }
 
     private void send404(Socket socket) {
-        try {
-            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
             out.write(("HTTP/1.1 404 Not Found\r\n\r\n").getBytes(StandardCharsets.UTF_8));
             out.flush();
         } catch (IOException e) {
@@ -277,12 +300,22 @@ public class CustomWebServer {
         }
     }
 
+    private String getSourceOrSlash(String source) {
+        if (source.equals("/")) {
+            return "/";
+        }
+        int paramsIndex = source.contains("?") ? source.indexOf("?") : source.length();
+        return source.substring(0, paramsIndex);
+    }
+
     private String getSourceExtensionOrSlash(String source) {
         if (source.equals("/")) {
             return "/";
         }
         int pointIndex = source.indexOf(".");
-        int paramsIndex = source.contains("?") ? source.indexOf("?") : source.length();
-        return source.substring(pointIndex, paramsIndex);
+        if (pointIndex == -1) {
+            return "";
+        }
+        return source.substring(pointIndex);
     }
 }
