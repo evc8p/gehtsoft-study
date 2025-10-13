@@ -1,0 +1,56 @@
+Run tests for DemonstrationTests
+✓ testWithBeforeAll (0 ms)
+- thisTestShouldBeSkipped
+✓ testWithBeforeEach (1 ms)
+✗ thisTestShouldBeFailed (4 ms)
+java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at CustomTestRunner.invokeMethod(CustomTestRunner.java:253)
+	at CustomTestRunner.runTests(CustomTestRunner.java:76)
+	at CustomTestRunner.main(CustomTestRunner.java:12)
+Caused by: org.opentest4j.AssertionFailedError: expected: <false> but was: <true>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertFalse.failNotFalse(AssertFalse.java:63)
+	at org.junit.jupiter.api.AssertFalse.assertFalse(AssertFalse.java:36)
+	at org.junit.jupiter.api.AssertFalse.assertFalse(AssertFalse.java:31)
+	at org.junit.jupiter.api.Assertions.assertFalse(Assertions.java:227)
+	at DemonstrationTests.thisTestShouldBeFailed(DemonstrationTests.java:26)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 4 more
+✓ testWithAfterEach (0 ms)
+--- Parameterized test started ---
+✓ testWithBeforeEach (0 ms)
+With value: string 1
+✓ testWithParameterizedTest (2 ms)
+✓ testWithAfterEach (0 ms)
+✓ testWithBeforeEach (0 ms)
+With value: string 2
+✓ testWithParameterizedTest (0 ms)
+✓ testWithAfterEach (0 ms)
+✓ testWithBeforeEach (0 ms)
+With value: string 3
+✓ testWithParameterizedTest (0 ms)
+✓ testWithAfterEach (0 ms)
+✓ testWithBeforeEach (0 ms)
+With value: string 4
+✓ testWithParameterizedTest (0 ms)
+✓ testWithAfterEach (0 ms)
+✓ testWithBeforeEach (0 ms)
+With value: string 5
+✓ testWithParameterizedTest (0 ms)
+✓ testWithAfterEach (0 ms)
+--- Parameterized test completed ---
+✓ testWithAfterAll (0 ms)
+
+=== Custom Test Runner Results ===
+Classes scanned	1
+PASSED tests	5
+FAILED tests	1
+SKIPPED tests	1
+Total tests		7
+Total execution time 65 ms
+Success rate	71.4 %
+
+Process finished with exit code 0

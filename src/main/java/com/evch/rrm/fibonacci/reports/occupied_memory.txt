@@ -1,0 +1,35 @@
+-------------------------------------------------------------
+Fibonacci recursive for	10. Used memory 0 Mb
+Fibonacci memoized for	10. Used memory 491 Mb
+Fibonacci iterative for	10. Used memory 82 Mb
+-------------------------------------------------------------
+Fibonacci recursive for	20. Used memory 53 Mb
+Fibonacci memoized for	20. Used memory 34 Mb
+Fibonacci iterative for	20. Used memory 22 Mb
+-------------------------------------------------------------
+Fibonacci recursive for	30. Used memory 14 Mb
+Fibonacci memoized for	30. Used memory 9 Mb
+Fibonacci iterative for	30. Used memory 6 Mb
+-------------------------------------------------------------
+Fibonacci recursive for	35. Used memory 4 Mb
+Fibonacci memoized for	35. Used memory 5 Mb
+Fibonacci iterative for	35. Used memory 5 Mb
+-------------------------------------------------------------
+Fibonacci recursive for	42. Used memory 1314 Mb
+Fibonacci memoized for	42. Used memory 5 Mb
+Fibonacci iterative for	42. Used memory 5 Mb
+-------------------------------------------------------------
+Fibonacci memoized for	350000. Used memory 481160 Mb
+Fibonacci iterative for	350000. Used memory 39850 Mb
+-------------------------------------------------------------
+Fibonacci memoized for	700000. Used memory 78335 Mb
+Fibonacci iterative for	700000. Used memory 64273 Mb
+-------------------------------------------------------------
+Fibonacci memoized for	1400000. Used memory 269383 Mb
+Fibonacci iterative for	1400000. Used memory 133103 Mb
+-------------------------------------------------------------
+Fibonacci memoized for	2800000. Used memory 172583 Mb
+Fibonacci iterative for	2800000. Used memory 552420 Mb
+-------------------------------------------------------------
+Fibonacci memoized for	5600000. Used memory 306172 Mb
+Fibonacci iterative for	5600000. Used memory 30496 Mb
