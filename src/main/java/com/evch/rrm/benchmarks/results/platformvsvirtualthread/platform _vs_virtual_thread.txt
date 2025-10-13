@@ -1,0 +1,11 @@
+25580:
+Baseline taken
+-                    Thread (reserved=53391KB +26699KB, committed=2915KB +1775KB)
+                            (threads #52 +26)
+25580:
+Baseline taken
+-                    Thread (reserved=1198696KB +1144279KB, committed=77656KB +74671KB)
+                            (threads #1200 +1147)
+The execution of virtual threads took 256 ms.
+----------------------------
+The execution of platform threads took 978 ms.
