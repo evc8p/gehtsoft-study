@@ -1,0 +1,62 @@
+
+  █ THRESHOLDS
+
+    http_req_duration
+    ✓ 'p(95)<1000' p(95)=3.01ms
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......................: 7009328 77875.801233/s
+    checks_succeeded...................: 99.99%  7008706 out of 7009328
+    checks_failed......................: 0.00%   622 out of 7009328
+
+    ✓ 8080 status 200
+    ✗ 8081 status 200
+      ↳  99% — ✓ 3504042 / ✗ 622
+
+    HTTP
+    http_req_duration.......................................................: avg=8.17ms  min=0s med=0s     max=57.36s p(90)=2.03ms p(95)=3.01ms
+      { expected_response:true }............................................: avg=8.17ms  min=0s med=0s     max=57.36s p(90)=2.03ms p(95)=3.01ms
+    http_req_failed.........................................................: 0.00%   622 out of 7009328
+    http_reqs...............................................................: 7009328 77875.801233/s
+
+    EXECUTION
+    iteration_duration......................................................: avg=17.32ms min=0s med=2.02ms max=57.36s p(90)=5.64ms p(95)=7.12ms
+    iterations..............................................................: 3504664 38937.900617/s
+    vus.....................................................................: 3       min=3              max=14999
+    vus_max.................................................................: 15000   min=15000          max=15000
+
+    NETWORK
+    data_received...........................................................: 916 MB  10 MB/s
+    data_sent...............................................................: 1.0 GB  11 MB/s
+
+
+
+
+running (1m30.0s), 00000/15000 VUs, 3504664 complete and 13798 interrupted iterations
+default ✓ [======================================] 00000/15000 VUs  1m0s
+
+
+
+
+Параметр	                Keep-Alive = false	                Keep-Alive = true
+Total checks	            6 976 542	                        7 009 328
+Checks succeeded	        99.97%	                            99.99%
+Checks failed	            0.02% (1 919)	                    0.00% (622)
+8080 status                 200	99% (3 487 484 / 787 failed)	100% (3 504 042 / 0 failed)
+8081 status                 200	99% (3 487 139 / 1 132 failed)	99% (3 504 042 / 622 failed)
+Avg http_req_duration	    8.69 ms	                            8.17 ms
+Max http_req_duration	    57.42 s	                            57.36 s
+Avg iteration_duration	    18.47 ms	                        17.32 ms
+Max iteration_duration	    57.42 s	                            57.36 s
+VUs_max	                    15 000	                            15 000
+Iterations completed	    3 488 271	                        3 504 664
+Iterations interrupted	    13 279	                            13 798
+Data sent	                1.0 GB	                            1.0 GB
+Data received	            912 MB	                            916 MB
+Throughput (req/s)	        77 506	                            77 875
+
