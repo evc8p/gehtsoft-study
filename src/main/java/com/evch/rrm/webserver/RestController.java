@@ -1,5 +1,6 @@
 package com.evch.rrm.webserver;
 
+import com.evch.rrm.webserver.annotations.CustomRestController;
 import com.evch.rrm.webserver.annotations.Get;
 import com.evch.rrm.webserver.annotations.Post;
 import org.json.JSONObject;
@@ -10,6 +11,7 @@ import java.util.Map;
 import static com.evch.rrm.webserver.Response.DataType.FILE;
 import static com.evch.rrm.webserver.Response.DataType.JSON;
 
+@CustomRestController
 public class RestController {
     private final static String USER_DIR_RESOURCES = System.getProperty("user.dir") + "/src/main/resources/";
     private final static String USER_DIR_STATIC_RESOURCES = USER_DIR_RESOURCES + "static/";
