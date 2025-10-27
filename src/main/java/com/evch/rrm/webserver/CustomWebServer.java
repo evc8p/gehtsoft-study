@@ -68,8 +68,12 @@ public class CustomWebServer {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            virtualServer.stop();
-            platformServer.stop();
+            try {
+                virtualServer.stop();
+                platformServer.stop();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -147,7 +151,7 @@ public class CustomWebServer {
         });
     }
 
-    public void stop() {
+    public void stop() throws InterruptedException {
         executor.shutdown();
         running = false;
         executor.awaitTermination(20, TimeUnit.SECONDS);

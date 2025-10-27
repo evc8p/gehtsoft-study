@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,30 +49,33 @@ public class CustomExecutorService implements ExecutorService {
 
     private void startThreadsExecutor() {
         Thread.ofVirtual().start(() -> {
+            long time = System.currentTimeMillis();
             while (!isTerminated() || isAwaitTermination) {
+                if (isShutdownNow) {
+                    workers.forEach(Thread::interrupt);
+                    workers.clear();
+                    tasks.clear();
+                    break;
+                }
                 try {
-                    if (workers.size() < maxCorePoolSize && !isShutdownNow) {
+                    if (workers.size() < maxCorePoolSize) {
                         Runnable task = tasks.poll(waitingForNewTasksTimeoutMs, TimeUnit.MILLISECONDS);
                         if (task != null) {
                             workers.addLast(useVirtualThreads ? Thread.ofVirtual().start(task) : Thread.ofPlatform().start(task));
                         }
                     }
-                    long time = System.currentTimeMillis();
-                    do {
-                        workers.removeIf(worker -> !worker.isAlive() || worker.isInterrupted());
-                    } while (workers.size() == maxCorePoolSize
-                            && (System.currentTimeMillis() - time) < waitingWorkersTimeoutMs);
-                    if (workers.size() == maxCorePoolSize) {
-                        workers.getFirst().interrupt();
-                        workers.removeFirst();
-                    }
-                    if (isShutdownNow) {
-                        workers.forEach(worker -> worker.interrupt());
-                        workers.clear();
-                        tasks.clear();
+                    workers.removeIf(worker -> !worker.isAlive() || worker.isInterrupted());
+                    if (workers.size() >= maxCorePoolSize) {
+                        if ((System.currentTimeMillis() - time) >= waitingWorkersTimeoutMs) {
+                            workers.removeFirst().interrupt();
+                        }
+                    } else {
+                        time = System.currentTimeMillis();
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         });
@@ -101,25 +105,23 @@ public class CustomExecutorService implements ExecutorService {
     }
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) {
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         isAwaitTermination = true;
+        Condition terminationCondition = lock.newCondition();
         lock.lock();
-        long timeoutNs = unit.toNanos(timeout);
-        long time = System.nanoTime(), t = 0L;
-        boolean result = true;
         try {
+            long timeoutNs = unit.toNanos(timeout);
             while (!isTerminated()) {
-                if (timeoutNs <= 0 || t >= timeoutNs) {
-                    result = false;
-                    break;
+                if (timeoutNs <= 0L) {
+                    return false;
                 }
-                t = System.nanoTime() - time;
+                timeoutNs = terminationCondition.awaitNanos(timeoutNs);
             }
         } finally {
             lock.unlock();
             isAwaitTermination = false;
         }
-        return result;
+        return true;
     }
 
     @Override
@@ -247,7 +249,7 @@ public class CustomExecutorService implements ExecutorService {
         }
         es.shutdownNow();
         try {
-            es.awaitTermination(10, TimeUnit.SECONDS);
+            es.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -273,7 +275,7 @@ public class CustomExecutorService implements ExecutorService {
         }
         es.shutdown();
         try {
-            es.awaitTermination(1, TimeUnit.SECONDS);
+            es.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -293,7 +295,7 @@ public class CustomExecutorService implements ExecutorService {
         }
         es.shutdown();
         try {
-            es.awaitTermination(20, TimeUnit.SECONDS);
+            es.awaitTermination(20, java.util.concurrent.TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
