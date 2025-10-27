@@ -121,8 +121,7 @@ public class CustomWebServer {
         executor.setWaitingWorkersTimeoutMs(10000);
         Thread.ofVirtual().start(() -> {
             while (running) {
-                try {
-                    Socket clientSocket = serverSocket.accept();
+                try (Socket clientSocket = serverSocket.accept()) {
                     executor.execute(() -> {
                         Socket finalClientSocket = null;
                         try {
