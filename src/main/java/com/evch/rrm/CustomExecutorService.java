@@ -26,7 +26,8 @@ public class CustomExecutorService implements ExecutorService {
     private volatile boolean isShutdown = false;
     private volatile boolean isShutdownNow = false;
     private volatile boolean isAwaitTermination = false;
-    private final Lock lock = new ReentrantLock();
+    private final Lock terminationLock = new ReentrantLock();
+    private final Lock addWorkersLock = new ReentrantLock();
 
     public CustomExecutorService(int corePoolSize, boolean useVirtualThreads) {
         if (corePoolSize < 1) {
@@ -61,7 +62,9 @@ public class CustomExecutorService implements ExecutorService {
                     if (workers.size() < maxCorePoolSize) {
                         Runnable task = tasks.poll(waitingForNewTasksTimeoutMs, TimeUnit.MILLISECONDS);
                         if (task != null) {
+                            addWorkersLock.lock();
                             workers.addLast(useVirtualThreads ? Thread.ofVirtual().start(task) : Thread.ofPlatform().start(task));
+                            addWorkersLock.unlock();
                         }
                     }
                     workers.removeIf(worker -> !worker.isAlive() || worker.isInterrupted());
@@ -107,8 +110,8 @@ public class CustomExecutorService implements ExecutorService {
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         isAwaitTermination = true;
-        Condition terminationCondition = lock.newCondition();
-        lock.lock();
+        Condition terminationCondition = terminationLock.newCondition();
+        terminationLock.lock();
         try {
             long timeoutNs = unit.toNanos(timeout);
             while (!isTerminated()) {
@@ -118,7 +121,7 @@ public class CustomExecutorService implements ExecutorService {
                 timeoutNs = terminationCondition.awaitNanos(timeoutNs);
             }
         } finally {
-            lock.unlock();
+            terminationLock.unlock();
             isAwaitTermination = false;
         }
         return true;
