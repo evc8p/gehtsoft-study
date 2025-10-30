@@ -184,8 +184,8 @@ public class CustomWebServer {
 
     private boolean checkRequest(Map<String, String> headers) {
         return (headers.containsKey("get") && headers.get("http_type").contains("http/1.1")
-                && headers.containsKey("host") && (headers.get("host").contains("localhost:8080") || headers.get("host").contains("localhost:8081"))
-                && headers.containsKey("user-agent") && headers.get("user-agent").contains("mozilla/5.0")
+                && headers.containsKey("host")
+                && headers.containsKey("user-agent")
                 && headers.containsKey("accept")
                 && (headers.get("accept").contains("text") || headers.get("accept").contains("image")
                 || headers.get("accept").contains("application") || headers.get("accept").contains("*/*")))
