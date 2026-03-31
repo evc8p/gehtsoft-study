@@ -1,8 +1,9 @@
-package com.evch.rrm.webserver.annotations;
+package com.evch.rrm.customspring.annotation;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CustomRequestParam {
+public @interface Post {
+    String endPoint();
 }
