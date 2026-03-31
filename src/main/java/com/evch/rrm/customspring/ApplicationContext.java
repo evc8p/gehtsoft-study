@@ -17,16 +17,16 @@ public class ApplicationContext {
         ApplicationContext virtualServerContext = new ApplicationContext();
         CustomWebServer virtualServer = (CustomWebServer) virtualServerContext.scan("com.evch.rrm.webserver", null, new Object[]{8080, 100, true});
 
-//        ApplicationContext platformServerContext = new ApplicationContext();
-//        CustomWebServer platformServer = (CustomWebServer) platformServerContext.scan("com.evch.rrm.webserver", null, new Object[]{8081, 50, true});
+        ApplicationContext platformServerContext = new ApplicationContext();
+        CustomWebServer platformServer = (CustomWebServer) platformServerContext.scan("com.evch.rrm.webserver", null, new Object[]{8081, 50, true});
 
         try {
             virtualServer.start();
-//            platformServer.start();
+            platformServer.start();
 
             System.out.println("Servers started:");
             System.out.println("Virtual thread server: http://localhost:8080");
-//            System.out.println("Platform thread server: http://localhost:8081");
+            System.out.println("Platform thread server: http://localhost:8081");
 
             // Keep servers running
             Thread.sleep(300000); // Run for ... ms
@@ -35,14 +35,14 @@ public class ApplicationContext {
         } finally {
             try {
                 virtualServer.stop();
-//                platformServer.stop();
+                platformServer.stop();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
         System.out.println("Servers stopped:");
         System.out.println("Virtual thread server: http://localhost:8080");
-//            System.out.println("Platform thread server: http://localhost:8081");
+        System.out.println("Platform thread server: http://localhost:8081");
     }
 
     public Object scan(String packageName, Properties properties, Object... applicationParameters) throws Exception {
