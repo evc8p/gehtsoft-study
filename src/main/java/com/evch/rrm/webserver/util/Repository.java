@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Properties;
 
 public class Repository {
@@ -21,9 +22,15 @@ public class Repository {
             hikariConfig.setJdbcUrl(properties.getProperty("db.url"));
             hikariConfig.setUsername(properties.getProperty("db.username"));
             hikariConfig.setPassword(properties.getProperty("db.password"));
-            hikariConfig.setMaximumPoolSize(Integer.parseInt(properties.getProperty("db.maxConnections")));
             hikariConfig.addDataSourceProperty("allowPublicKeyRetrieval", "true");
             hikariConfig.addDataSourceProperty("useSSL", "false");
+
+            hikariConfig.setMaximumPoolSize(Integer.parseInt(properties.getProperty("db.maxConnections")));
+            hikariConfig.setMinimumIdle(Integer.parseInt(properties.getProperty("db.minimumIdle")));
+            hikariConfig.setConnectionTimeout(Integer.parseInt(properties.getProperty("db.connectionTimeout")));
+            hikariConfig.setIdleTimeout(Integer.parseInt(properties.getProperty("db.idleTimeout")));
+            hikariConfig.setMaxLifetime(Integer.parseInt(properties.getProperty("db.maxLifetime")));
+
             hikariDataSource = new HikariDataSource(hikariConfig);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -32,5 +39,11 @@ public class Repository {
 
     public static Connection getConnection() throws SQLException {
         return hikariDataSource.getConnection();
+    }
+
+    public static void closeConnection() {
+        if (Objects.nonNull(hikariDataSource)) {
+            hikariDataSource.close();
+        }
     }
 }

@@ -1,6 +1,5 @@
 package com.evch.rrm.webserver.dao;
 
-import com.evch.rrm.customspring.annotation.CustomAutowired;
 import com.evch.rrm.webserver.model.User;
 import com.evch.rrm.webserver.util.Repository;
 
@@ -10,12 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 public class CustomUserRepository {
-    @CustomAutowired
-    private Repository repository;
-
-    public CustomUserRepository(Repository repository) {
-        this.repository = repository;
-    }
 
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();

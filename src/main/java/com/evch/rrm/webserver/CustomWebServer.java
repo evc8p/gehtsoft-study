@@ -2,8 +2,10 @@ package com.evch.rrm.webserver;
 
 import com.evch.rrm.CustomExecutorService;
 import com.evch.rrm.customspring.ApplicationContext;
-import com.evch.rrm.customspring.annotation.*;
+import com.evch.rrm.customspring.annotation.CustomApplication;
+import com.evch.rrm.customspring.annotation.CustomAutowired;
 import com.evch.rrm.webserver.model.Controller;
+import com.evch.rrm.webserver.util.Repository;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -97,6 +99,7 @@ public class CustomWebServer {
                 throw new InterruptedException("Server socket can not be closed");
             }
         }
+        Repository.closeConnection();
     }
 
     private boolean handleClient(Socket clientSocket) {
