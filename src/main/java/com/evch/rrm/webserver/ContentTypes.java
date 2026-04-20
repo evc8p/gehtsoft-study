@@ -9,6 +9,7 @@ public enum ContentTypes {
     SLASH("/", "text/html"),
     INDEX_HTML("index.html", "text/html"),
     HTML(".html", "text/html"),
+    TEXT(".html", "text/html"),
     CSS(".css", "text/css"),
     ICO(".ico", "image/x-icon"),
     GIF(".gif", "image/gif"),

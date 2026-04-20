@@ -108,18 +108,24 @@ public class CustomWebServer {
             Response response = new Response();
             String http_method = requestEntries.get("http_method");
             String source = getSourceOrSlash(requestEntries.get(http_method));
-            Controller invokedController = controller.getControllers().get(http_method.toUpperCase() + " " + source.replaceAll("[^/]+\\.[^/]+$", ""));
+            Controller invokedController = controller.getControllers().get(http_method + " " + source.replaceAll("[^/]+\\.[^/]+$", ""));
             if (invokedController != null) {
                 try {
                     Method method = invokedController.getMethod();
                     Object object = invokedController.getObject();
-                    response = (Response) method.invoke(object, requestEntries);
-                } catch (IllegalAccessException | InvocationTargetException e) {
+                    if (method.getParameterCount() == 0) {
+                        response = (Response) method.invoke(object);
+                    } else {
+                        response = (Response) method.invoke(object, requestEntries);
+                    }
+                } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException |
+                         NullPointerException | ExceptionInInitializerError e) {
                     e.printStackTrace();
                 }
                 switch (response.getDataType()) {
                     case JSON -> sendTextInResponse(ContentTypes.JSON, response.getData(), clientSocket);
                     case FILE -> sendFileInResponse(response.getData(), clientSocket);
+                    case TEXT -> sendTextInResponse(ContentTypes.TEXT, response.getData(), clientSocket);
                 }
             } else {
                 send404(clientSocket);
