@@ -4,7 +4,7 @@ import com.evch.rrm.CustomExecutorService;
 import com.evch.rrm.customspring.ApplicationContext;
 import com.evch.rrm.customspring.annotation.CustomApplication;
 import com.evch.rrm.customspring.annotation.CustomAutowired;
-import com.evch.rrm.webserver.model.Controller;
+import com.evch.rrm.customspring.model.Controller;
 import com.evch.rrm.webserver.util.Repository;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,11 +20,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 
 @CustomApplication
 public class CustomWebServer {
@@ -103,20 +101,30 @@ public class CustomWebServer {
     }
 
     private boolean handleClient(Socket clientSocket) {
-        Map<String, String> requestEntries = parseAndExtractRequest(clientSocket);
-        if (checkRequest(requestEntries)) {
-            Response response = new Response();
-            String http_method = requestEntries.get("http_method");
-            String source = getSourceOrSlash(requestEntries.get(http_method));
-            Controller invokedController = controller.getControllers().get(http_method + " " + source.replaceAll("[^/]+\\.[^/]+$", ""));
-            if (invokedController != null) {
+        Request request = parseAndExtractRequest(clientSocket);
+        if (checkRequest(request)) {
+            Controller controllerMethod = controller.getMethods().get(request.getMethod() + " " + request.getPath());
+            if (controllerMethod != null) {
+                Response response = new Response();
                 try {
-                    Method method = invokedController.getMethod();
-                    Object object = invokedController.getObject();
+                    Method method = controllerMethod.getMethod();
+                    Object object = controllerMethod.getObject();
                     if (method.getParameterCount() == 0) {
-                        response = (Response) method.invoke(object);
+                        response = (Response) method.invoke(object, null);
                     } else {
-                        response = (Response) method.invoke(object, requestEntries);
+                        Matcher m = controllerMethod.getParametersPattern().matcher(request.getMethodPattern());
+                        String[] methodParams = new String[m.groupCount()];
+                        if (m.matches()) {
+                            for (int i = 0; i < methodParams.length; i++) {
+                                methodParams[i] = m.group(i + 1);
+                            }
+                        }
+                        if (methodParams.length == 0) {
+                            response = (Response) method.invoke(object, request);
+                        } else {
+                            System.out.println(method.getName());
+                            response = (Response) method.invoke(object, methodParams);
+                        }
                     }
                 } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException |
                          NullPointerException | ExceptionInInitializerError e) {
@@ -126,61 +134,82 @@ public class CustomWebServer {
                     case JSON -> sendTextInResponse(ContentTypes.JSON, response.getData(), clientSocket);
                     case FILE -> sendFileInResponse(response.getData(), clientSocket);
                     case TEXT -> sendTextInResponse(ContentTypes.TEXT, response.getData(), clientSocket);
+                    case ERROR -> {
+                        if (response.getData().equals("404")) {
+                            send404(clientSocket);
+                        }
+                    }
                 }
             } else {
+                System.out.println("A webserver does not have a controller to handle this request: " + request.getMethod() + " " + request.getPath());
                 send404(clientSocket);
             }
         } else {
             send404(clientSocket);
         }
-        return !(requestEntries.containsKey("CONNECTION") && requestEntries.get("CONNECTION").contains("CLOSE"));
+        return !(request.getHeaders().containsKey("CONNECTION") && request.getHeaders().get("CONNECTION").contains("CLOSE"));
     }
 
-    private boolean checkRequest(Map<String, String> headers) {
-        return (headers.containsKey("GET") && headers.get("http_type").contains("HTTP/1.1")
-                && headers.containsKey("HOST")
-                && headers.containsKey("USER-AGENT")
-                && headers.containsKey("ACCEPT")
-                && (headers.get("ACCEPT").contains("TEXT") || headers.get("ACCEPT").contains("IMAGE")
-                || headers.get("ACCEPT").contains("APPLICATION") || headers.get("ACCEPT").contains("*/*")))
-                || (headers.containsKey("POST") && headers.get("http_type").contains("HTTP/1.1")
-                && headers.containsKey("CONTENT-TYPE") && headers.get("CONTENT-TYPE").contains("APPLICATION/JSON")
-                && headers.containsKey("CONTENT-LENGTH"));
+    // package-private для тестов
+    boolean checkRequest(Request request) {
+        if (request == null || !"HTTP/1.1".equals(request.getVersion())) {
+            return false;
+        }
+        return switch (request.getMethod()) {
+            case "GET" -> isValidGet(request);
+            case "POST" -> isValidPost(request);
+            default -> false;
+        };
     }
 
-    private Map<String, String> parseAndExtractRequest(final Socket clientSocket) {
-        Map<String, String> requestEntries = new HashMap<>();
+    private boolean isValidGet(Request request) {
+        return request.getHeaders().keySet().containsAll(List.of("HOST", "USER-AGENT", "ACCEPT"))
+                && List.of("TEXT", "IMAGE", "APPLICATION", "*/*").stream().anyMatch(s -> request.getHeaders().get("ACCEPT").contains(s));
+    }
+
+    private boolean isValidPost(Request request) {
+        return request.getHeaders().containsKey("CONTENT-TYPE") && request.getHeaders().get("CONTENT-TYPE").contains("APPLICATION/JSON")
+                && request.getHeaders().containsKey("CONTENT-LENGTH");
+    }
+
+    private Request parseAndExtractRequest(final Socket clientSocket) {
+        Request request = new Request();
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            //get a request 1st line
             String line = in.readLine();
             String[] data = line.split(" ", 3);
-            requestEntries.put("http_method", data[0].trim().toUpperCase());
-            requestEntries.put(data[0].trim().toUpperCase(), data[1].trim());
-            requestEntries.put("http_type", data[2].trim().toUpperCase());
+            request.setMethod(data[0].trim().toUpperCase());
+            request.setUri(data[1].trim());
+            request.setVersion(data[2].trim().toUpperCase());
 
+            //get request headers
             int contentLength = 0;
+            Map<String, String> headers = new HashMap<>();
             while ((line = in.readLine()) != null && !line.isEmpty()) {
                 data = line.split(":", 2);
                 String key = data[0].trim().toUpperCase();
-                requestEntries.put(key, data[1].trim().toUpperCase());
+                headers.put(key, data[1].trim().toUpperCase());
                 if (key.contains("CONTENT-LENGTH")) {
                     contentLength = Integer.parseInt(data[1].trim());
                 }
             }
+            request.setHeaders(headers);
 
+            //get a request body
             if (contentLength > 0) {
                 char[] body = new char[contentLength];
                 int totalRead = 0;
                 while (totalRead < contentLength) {
                     int read = in.read(body, totalRead, contentLength - totalRead);
                     if (read == -1) {
-                        send400(clientSocket);
-                        requestEntries.clear();
-                        return requestEntries;
+                        request.reset();
+                        return request;
                     }
                     totalRead += read;
                 }
-                requestEntries.put("BODY", new String(body));
+                request.setBody(new String(body));
             }
         } catch (SocketException e) {
             if ("Connection reset".equals(e.getMessage())) {
@@ -192,7 +221,7 @@ public class CustomWebServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return requestEntries;
+        return request;
     }
 
     private void sendFileInResponse(String filePath, Socket socket) {
@@ -255,14 +284,6 @@ public class CustomWebServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String getSourceOrSlash(String source) {
-        if (source.equals("/")) {
-            return "/";
-        }
-        int paramsIndex = source.contains("?") ? source.indexOf("?") : source.length();
-        return source.substring(0, paramsIndex);
     }
 
     private String getSourceExtensionOrSlash(String source) {

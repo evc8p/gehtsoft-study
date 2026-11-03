@@ -7,39 +7,36 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.time.LocalDateTime;
-import java.util.Map;
 
-import static com.evch.rrm.webserver.Response.DataType.FILE;
-import static com.evch.rrm.webserver.Response.DataType.JSON;
+import static com.evch.rrm.customspring.contract.ServerResponse.DataType.*;
 
 @CustomRequestMapping()
 public class CustomHtmlController extends CustomController {
     private final static String USER_DIR_RESOURCES = System.getProperty("user.dir") + "/src/main/resources/";
     private final static String USER_DIR_STATIC_RESOURCES = USER_DIR_RESOURCES + "static/";
 
-    @CustomGetMapping({"/", "/index.html"})
-    public Response getStartPageSlash(Map<String, String> requestEntries) {
-        String filePath = requestEntries.get("GET");
-        if (filePath.equals("/") || filePath.equals("/index.html")) {
-            return new Response(FILE, USER_DIR_STATIC_RESOURCES + "index.html");
+    @CustomGetMapping({"/"})
+    public Response getStartPageSlash(Request request) {
+        String source = request.getSource();
+        if (source.equals("/") || source.equals("/index.html")) {
+            if (new File(USER_DIR_STATIC_RESOURCES + "index.html").exists()) {
+                return new Response(FILE, USER_DIR_STATIC_RESOURCES + "index.html");
+            }
         }
-        if (new File(USER_DIR_STATIC_RESOURCES + filePath.substring(1)).exists()) {
-            return new Response(FILE, USER_DIR_STATIC_RESOURCES + filePath.substring(1));
-        }
-        return new Response(FILE, USER_DIR_STATIC_RESOURCES + "index.html");
+        return new Response(ERROR, "404");
     }
 
     @CustomGetMapping({"/static/", "/static/images/"})
-    public Response getStatic(Map<String, String> requestEntries) {
-        String filePath = USER_DIR_RESOURCES + requestEntries.get("GET");
+    public Response getStatic(Request request) {
+        String filePath = USER_DIR_RESOURCES + request.getSource();
         if (new File(filePath).exists()) {
             return new Response(FILE, filePath);
         }
-        return new Response(FILE, USER_DIR_STATIC_RESOURCES + "index.html");
+        return new Response(ERROR, "404");
     }
 
     @CustomGetMapping("/api/time")
-    public Response getTime(Map<String, String> requestEntries) {
+    public Response getTime() {
         String response = """
                 {
                     "currentServerTime": "%s"
@@ -48,7 +45,7 @@ public class CustomHtmlController extends CustomController {
     }
 
     @CustomGetMapping("/api/stats")
-    public Response getStats(Map<String, String> requestEntries) {
+    public Response getStats() {
         return new Response(JSON, """
                 {
                     "stats": "Server has no stats"
@@ -56,12 +53,12 @@ public class CustomHtmlController extends CustomController {
     }
 
     @CustomPostMapping("/api/echo")
-    public Response sendEcho(Map<String, String> requestEntries) {
+    public Response sendEcho(Request request) {
         String response = """
                 {
                     "echoOutput": "Server saw your message: %s"
                 }""";
         return new Response(JSON, String.format(response,
-                new JSONObject(requestEntries.get("BODY")).get("message")));
+                new JSONObject(request.getBody()).get("message")));
     }
 }

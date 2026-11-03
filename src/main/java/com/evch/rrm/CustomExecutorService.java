@@ -38,7 +38,7 @@ public class CustomExecutorService implements ExecutorService {
         this.tasks = new LinkedBlockingQueue<>();
         this.useVirtualThreads = useVirtualThreads;
 
-        startThreadsExecutor();
+        handleThreads();
     }
 
     public static void main(String[] args) {
@@ -48,7 +48,7 @@ public class CustomExecutorService implements ExecutorService {
         ces.testShutdownBehavior();
     }
 
-    private void startThreadsExecutor() {
+    private void handleThreads() {
         Thread.ofVirtual().start(() -> {
             long time = System.currentTimeMillis();
             while (!isTerminated() || isAwaitTermination) {

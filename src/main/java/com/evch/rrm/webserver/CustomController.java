@@ -2,7 +2,7 @@ package com.evch.rrm.webserver;
 
 import com.evch.rrm.customspring.annotation.CustomAutowired;
 import com.evch.rrm.customspring.annotation.CustomRestController;
-import com.evch.rrm.webserver.model.Controller;
+import com.evch.rrm.customspring.model.Controller;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,5 +14,5 @@ public class CustomController {
     @Getter
     @Setter
     @CustomAutowired
-    private Map<String, Controller> controllers = new HashMap<>();
+    private Map<String, Controller> methods = new HashMap<>();
 }

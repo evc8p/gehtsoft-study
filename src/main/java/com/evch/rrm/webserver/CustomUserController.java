@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.evch.rrm.webserver.Response.DataType.TEXT;
+import static com.evch.rrm.customspring.contract.ServerResponse.DataType.TEXT;
 
 @CustomRequestMapping("/api/v1/users")
 public class CustomUserController extends CustomController {

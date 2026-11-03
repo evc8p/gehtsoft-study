@@ -1,29 +1,18 @@
 package com.evch.rrm.webserver;
 
+import com.evch.rrm.customspring.contract.ServerResponse;
 import lombok.Getter;
 import lombok.Setter;
 
-public class Response {
-    @Getter
-    @Setter
-    private DataType dataType;
-    @Getter
-    @Setter
-    private String data;
+@Getter
+@Setter
+public class Response extends ServerResponse {
 
     public Response() {
-        this.dataType = DataType.TEXT;
-        this.data = "{}";
+        super();
     }
 
-    public Response(DataType dataType, String data) {
-        this.dataType = dataType;
-        this.data = data;
-    }
-
-    public enum DataType {
-        TEXT,
-        JSON,
-        FILE
+    public Response(ServerResponse.DataType dataType, String data) {
+        super(dataType, data);
     }
 }
