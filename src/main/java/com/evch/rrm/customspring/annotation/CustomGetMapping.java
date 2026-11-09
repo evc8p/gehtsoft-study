@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@CustomHttpMethodMapping(method = "GET")
+@CustomHttpMethodMapping(httpMethod = "GET")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface CustomGetMapping {

@@ -96,7 +96,7 @@ public class CustomUserRepository {
         return user;
     }
 
-    public void deleteUser(Long id) {
+    public void deleteUser(long id) {
         try (Connection conn = Repository.getConnection();
              PreparedStatement statement = conn.prepareStatement("DELETE FROM users WHERE id = ?")) {
             statement.setLong(1, id);

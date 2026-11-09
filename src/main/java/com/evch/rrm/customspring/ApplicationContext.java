@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class ApplicationContext {
     private Map<Class<?>, Object> beans = new HashMap<>();
-    private final Map<String, Controller> controllers = new HashMap<>();
+    ControllerHandler controllerHandler = new ControllerHandler();
 
     public static void main(String[] args) throws Exception {
         ApplicationContext virtualServerContext = new ApplicationContext();
@@ -77,7 +77,7 @@ public class ApplicationContext {
             if (clazz.isAnnotationPresent(CustomRestController.class)
                     || clazz.isAnnotationPresent(CustomService.class)
                     || clazz.isAnnotationPresent(CustomRequestMapping.class)) {
-                getBeansThroughConstructors(clazz, properties);
+                setBeansThroughConstructors(clazz, properties);
             }
         }
         injectDependenciesToBeans();
@@ -87,7 +87,7 @@ public class ApplicationContext {
         return applicationBean;
     }
 
-    private void getBeansThroughConstructors(Class<?> clazz, Properties properties) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private void setBeansThroughConstructors(Class<?> clazz, Properties properties) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Constructor<?> constructor = getConstructorForAutowiring(clazz);
         Object[] parameters = new Object[constructor.getParameterCount()];
         Class<?>[] paramTypes = constructor.getParameterTypes();
@@ -115,7 +115,7 @@ public class ApplicationContext {
             paramTypes[i] = paramType;
             if (Objects.isNull(parameters[i])) {
                 if (Objects.isNull(beans.get(paramType))) {
-                    getBeansThroughConstructors(paramType, properties);
+                    setBeansThroughConstructors(paramType, properties);
                 }
                 parameters[i] = beans.get(paramType);
             }
@@ -172,14 +172,17 @@ public class ApplicationContext {
             String requestMappingPath = "";
             if (bean.getClass().isAnnotationPresent(CustomRequestMapping.class)) {
                 requestMappingPath = bean.getClass().getDeclaredAnnotation(CustomRequestMapping.class).value();
-            }
-            for (Method method : bean.getClass().getDeclaredMethods()) {
-                for (Annotation annotation : method.getDeclaredAnnotations()) {
-                    CustomHttpMethodMapping meta = annotation.annotationType().getAnnotation(CustomHttpMethodMapping.class);
-                    if (Objects.nonNull(meta) && paramsHaveValidAnnotations(method)) {
-                        String[] paths = (String[]) annotation.annotationType().getMethod("value").invoke(annotation);
-                        for (String path : paths) {
-                            registerController(meta.method(), requestMappingPath + path, bean, method);
+                for (Method method : bean.getClass().getDeclaredMethods()) {
+                    for (Annotation annotation : method.getDeclaredAnnotations()) {
+                        CustomHttpMethodMapping meta = annotation.annotationType().getAnnotation(CustomHttpMethodMapping.class);
+                        if (Objects.nonNull(meta) && httpMethodMappingParamsHaveValidAnnotations(method)) {
+                            String[] paths = (String[]) annotation.annotationType().getMethod("value").invoke(annotation);
+                            for (String path : paths) {
+                                registerController(meta.httpMethod(), requestMappingPath + path, bean, method);
+                            }
+                        } else {
+                            throw new IllegalArgumentException("The method must have annotations of CustomGetMapping, CustomPostMapping and etc.\n" +
+                                    "Class: " + method.getDeclaringClass().getSimpleName() + ",\nMethod: " + method.getName() + ")");
                         }
                     }
                 }
@@ -192,18 +195,11 @@ public class ApplicationContext {
                         throw new IllegalArgumentException("The Autowired annotation cannot be applied to fields with the final access modifier");
                     }
                     if ((modifiers & Modifier.PRIVATE) != 0) {
-                        if (bean.getClass().isAnnotationPresent(CustomRestController.class)) {
-                            if (field.getGenericType() instanceof ParameterizedType pt) {
-                                Type rawType = pt.getRawType();
-                                Type[] args = pt.getActualTypeArguments();
-
-                                boolean isMapStringMethod = rawType == Map.class && args.length == 2 && args[0] == String.class && args[1] == Controller.class;
-                                if (isMapStringMethod) {
-                                    field.setAccessible(true);
-                                    field.set(bean, controllers);
-                                    System.out.println("Dependency injected: controller methods in a field " + field.getName() + " of a class " + bean.getClass().getSimpleName());
-                                }
-                            }
+                        if (field.getType().isAssignableFrom(ControllerHandler.class)) {
+                            field.setAccessible(true);
+                            field.set(bean, controllerHandler);
+                            System.out.println("Dependency injected: controller methods in a field " + field.getName() + " of a class " + bean.getClass().getSimpleName());
+                            continue;
                         }
                         Class<?> fieldType = field.getType();
                         Object dependency = beans.get(fieldType);
@@ -218,7 +214,7 @@ public class ApplicationContext {
                 }
                 if (field.isAnnotationPresent(CustomValue.class)) {
                     String rawValue = field.getAnnotation(CustomValue.class).value();
-                    if (Objects.isNull(rawValue) || rawValue.isEmpty() || !(field.getType().isPrimitive() || field.getType() == String.class)) {
+                    if (rawValue.isEmpty() || !(field.getType().isPrimitive() || field.getType() == String.class)) {
                         throw new IllegalArgumentException("The CustomValue value is missing or is not primitive type or type of String.\nThe field: " + field.getName() + " in the " + bean);
                     } else {
                         field.setAccessible(true);
@@ -234,10 +230,11 @@ public class ApplicationContext {
         if (path.isEmpty()) {
             path = "/";
         }
-        String methodPattern = httpMethod + " " + path.replaceAll("\\{[^/]*}", "([^/]+)");
-        Pattern parametersPattern = Pattern.compile(methodPattern);
-        controllers.put(methodPattern, new Controller(bean, method, parametersPattern));
-        System.out.println(path + " is assigned with " + method.getName() + " method" + "(" + methodPattern + ")");
+        String httpMethodPattern = httpMethod + " " + path.replaceAll("\\{[^/]*}", "([^/]+)");
+        Pattern pathParametersPattern = Pattern.compile(httpMethodPattern);
+        Type[] parameterTypes = method.getGenericParameterTypes();
+        controllerHandler.getControllers().put(httpMethodPattern, new Controller(bean, method, pathParametersPattern, parameterTypes));
+        System.out.println(path + " is assigned with " + method.getName() + " method" + "(" + httpMethodPattern + ")");
     }
 
     private List<Class<?>> findClasses(String packageName) throws Exception {
@@ -271,7 +268,7 @@ public class ApplicationContext {
         }
     }
 
-    private boolean paramsHaveValidAnnotations(Method method) {
+    private boolean httpMethodMappingParamsHaveValidAnnotations(Method method) {
         for (Parameter parameter : method.getParameters()) {
             boolean isServerRequest = ServerRequest.class.isAssignableFrom(parameter.getType());
             if (isServerRequest) {
@@ -283,16 +280,15 @@ public class ApplicationContext {
             }
 
             Annotation[] annotations = parameter.getAnnotations();
-            boolean hasValidAnnotation = false;
-            for (Annotation annotation : annotations) {
-                CustomHttpVariableMapping meta = annotation.annotationType().getAnnotation(CustomHttpVariableMapping.class);
-                if (Objects.nonNull(meta)) {
-                    hasValidAnnotation = true;
-                }
-            }
-            if (!hasValidAnnotation) {
+            CustomHttpVariableMapping meta = annotations[0].annotationType().getAnnotation(CustomHttpVariableMapping.class);
+            if (Objects.isNull(meta)) {
                 throw new IllegalArgumentException("The method must have parameter of class 'ServerRequest', or annotations for path parameters, " +
-                        "request parameters, or the request body (class: " + method.getDeclaringClass().getSimpleName() + ", method: " + method.getName() + ")");
+                        "request parameters, the request body or a custom value.\nClass: " + method.getDeclaringClass().getSimpleName() + ",\nMethod: " +
+                        method.getName() + ")");
+            }
+            if (annotations.length > 1) {
+                throw new IllegalArgumentException("A parameter can have only one annotation.\n" +
+                        "Class: " + method.getDeclaringClass().getSimpleName() + ".\nMethod: " + method.getName() + ").\nParameter: " + parameter.getName());
             }
         }
         return true;

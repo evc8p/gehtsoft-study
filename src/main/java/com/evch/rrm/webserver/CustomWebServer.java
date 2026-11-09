@@ -1,17 +1,14 @@
 package com.evch.rrm.webserver;
 
 import com.evch.rrm.CustomExecutorService;
-import com.evch.rrm.customspring.ApplicationContext;
+import com.evch.rrm.customspring.ControllerHandler;
 import com.evch.rrm.customspring.annotation.CustomApplication;
 import com.evch.rrm.customspring.annotation.CustomAutowired;
-import com.evch.rrm.customspring.model.Controller;
 import com.evch.rrm.webserver.util.Repository;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -22,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 
 @CustomApplication
 public class CustomWebServer {
@@ -36,8 +32,7 @@ public class CustomWebServer {
     @Setter
     private volatile boolean isKeepAlive = true;
     @CustomAutowired
-    private CustomController controller;
-    private ApplicationContext context;
+    private ControllerHandler controllerHandler;
 
     public CustomWebServer(Integer port, Integer threadPoolSize, Boolean useVirtualThreads) {
         if (port < 0 || port > 65535) {
@@ -102,47 +97,17 @@ public class CustomWebServer {
 
     private boolean handleClient(Socket clientSocket) {
         Request request = parseAndExtractRequest(clientSocket);
-        if (checkRequest(request)) {
-            Controller controllerMethod = controller.getMethods().get(request.getMethod() + " " + request.getPath());
-            if (controllerMethod != null) {
-                Response response = new Response();
-                try {
-                    Method method = controllerMethod.getMethod();
-                    Object object = controllerMethod.getObject();
-                    if (method.getParameterCount() == 0) {
-                        response = (Response) method.invoke(object, null);
-                    } else {
-                        Matcher m = controllerMethod.getParametersPattern().matcher(request.getMethodPattern());
-                        String[] methodParams = new String[m.groupCount()];
-                        if (m.matches()) {
-                            for (int i = 0; i < methodParams.length; i++) {
-                                methodParams[i] = m.group(i + 1);
-                            }
-                        }
-                        if (methodParams.length == 0) {
-                            response = (Response) method.invoke(object, request);
-                        } else {
-                            System.out.println(method.getName());
-                            response = (Response) method.invoke(object, methodParams);
-                        }
-                    }
-                } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException |
-                         NullPointerException | ExceptionInInitializerError e) {
-                    e.printStackTrace();
-                }
-                switch (response.getDataType()) {
-                    case JSON -> sendTextInResponse(ContentTypes.JSON, response.getData(), clientSocket);
-                    case FILE -> sendFileInResponse(response.getData(), clientSocket);
-                    case TEXT -> sendTextInResponse(ContentTypes.TEXT, response.getData(), clientSocket);
-                    case ERROR -> {
-                        if (response.getData().equals("404")) {
-                            send404(clientSocket);
-                        }
+        Response response;
+        if (checkRequest(request) && Objects.nonNull(response = (Response) controllerHandler.handleRequest(request)) && Objects.nonNull(response.getDataType())) {
+            switch (response.getDataType()) {
+                case JSON -> sendTextInResponse(ContentTypes.JSON, response.getData(), clientSocket);
+                case FILE -> sendFileInResponse(response.getData(), clientSocket);
+                case TEXT -> sendTextInResponse(ContentTypes.TEXT, response.getData(), clientSocket);
+                case ERROR -> {
+                    if (response.getData().equals("404")) {
+                        send404(clientSocket);
                     }
                 }
-            } else {
-                System.out.println("A webserver does not have a controller to handle this request: " + request.getMethod() + " " + request.getPath());
-                send404(clientSocket);
             }
         } else {
             send404(clientSocket);

@@ -8,6 +8,6 @@ import java.lang.annotation.Target;
 @CustomHttpVariableMapping
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface CustomRequestParameter {
+public @interface CustomQueryParameter {
     String value();
 }

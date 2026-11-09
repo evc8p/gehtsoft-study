@@ -50,7 +50,7 @@ public class CustomUserService {
         return new CustomUserDto(user.getId(), user.getName(), user.getEmail(), user.getAddress());
     }
 
-    public void deleteUser(Long id) {
+    public void deleteUser(long id) {
         userRepository.deleteUser(id);
     }
 }

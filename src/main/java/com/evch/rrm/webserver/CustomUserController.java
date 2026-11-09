@@ -27,7 +27,7 @@ public class CustomUserController extends CustomController {
     }
 
     @CustomGetMapping("/{id}")
-    public Response getUserById(@CustomPathVariable("id") Long id) {
+    public Response getUserById(@CustomPathVariable("{id}") Long id) {
         CustomUserDto user = userService.getUserById(id);
         return new Response(TEXT, "user with id = " + id + ": " + user.getName());
     }
@@ -39,19 +39,19 @@ public class CustomUserController extends CustomController {
     }
 
     @CustomPutMapping("/update/{id}")
-    public Response updateUser(@CustomPathVariable("id") Long id, @CustomRequestBody CustomUserDto user) {
+    public Response updateUser(@CustomPathVariable("{id}") Long id, @CustomRequestBody CustomUserDto user) {
         CustomUserDto updatedUser = userService.updateUser(id, user);
         return new Response(TEXT, "user with id = " + updatedUser.getId() + " updated: " + updatedUser.getName());
     }
 
     @CustomPatchMapping("/patch/{id}")
-    public Response patchUser(@CustomPathVariable("id") Long id, @CustomRequestBody Map<String, Object> updates) {
+    public Response patchUser(@CustomPathVariable("{id}") Long id, @CustomRequestBody Map<String, Object> updates) {
         CustomUserDto userDto = userService.patchUser(id, updates);
         return new Response(TEXT, "user with id = " + id + " patched: " + userDto.getName());
     }
 
-    @CustomDeleteMapping("delete/{id}")
-    public Response deleteUser(@CustomPathVariable("id") Long id) {
+    @CustomDeleteMapping("/delete/{id}")
+    public Response deleteUser(@CustomPathVariable("{id}") long id) {
         userService.deleteUser(id);
         return new Response(TEXT, "user with id = " + id + " deleted: " + id);
     }
