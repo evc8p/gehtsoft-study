@@ -15,7 +15,7 @@ public class CustomHtmlController extends CustomController {
     private final static String USER_DIR_RESOURCES = System.getProperty("user.dir") + "/src/main/resources/";
     private final static String USER_DIR_STATIC_RESOURCES = USER_DIR_RESOURCES + "static/";
 
-    @CustomGetMapping({"/"})
+    @CustomGetMapping("/")
     public Response getStartPageSlash(Request request) {
         String source = request.getSource();
         if (source.equals("/") || source.equals("/index.html")) {
@@ -26,7 +26,7 @@ public class CustomHtmlController extends CustomController {
         return new Response(ERROR, "404");
     }
 
-    @CustomGetMapping({"/static/", "/static/images/"})
+    @CustomGetMapping(isStaticContent = true, value = {"/static/", "/static/images/"})
     public Response getStatic(Request request) {
         String filePath = USER_DIR_RESOURCES + request.getSource();
         if (new File(filePath).exists()) {

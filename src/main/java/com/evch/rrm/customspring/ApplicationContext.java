@@ -101,9 +101,9 @@ public class ApplicationContext {
                         throw new IllegalArgumentException("The CustomValue value is missing or is missing from the properties.\nThe parameter: " + paramType + " of the constructor: " + constructor.getName() + " in the " + clazz);
                     }
                     if (rawValue.isEmpty()) {
-                        parameters[i] = convert(properties.getProperty(clazz.getName() + i), paramType);
+                        parameters[i] = Helper.convert(properties.getProperty(clazz.getName() + i), paramType);
                     } else {
-                        parameters[i] = convert(rawValue, paramType);
+                        parameters[i] = Helper.convert(rawValue, paramType);
                     }
                 } else {
                     throw new IllegalArgumentException(
@@ -123,27 +123,6 @@ public class ApplicationContext {
         Object bean = clazz.getDeclaredConstructor(paramTypes).newInstance(parameters);
         beans.put(clazz, bean);
         System.out.println("Class created: " + clazz.getSimpleName());
-    }
-
-    private Object convert(String value, Class<?> targetType) {
-        if (targetType == String.class) return value;
-        if (targetType == byte.class || targetType == Byte.class)
-            return Byte.parseByte(value);
-        if (targetType == short.class || targetType == Short.class)
-            return Short.parseShort(value);
-        if (targetType == int.class || targetType == Integer.class)
-            return Integer.parseInt(value);
-        if (targetType == long.class || targetType == Long.class)
-            return Long.parseLong(value);
-        if (targetType == float.class || targetType == Float.class)
-            return Float.parseFloat(value);
-        if (targetType == double.class || targetType == Double.class)
-            return Double.parseDouble(value);
-        if (targetType == boolean.class || targetType == Boolean.class)
-            return Boolean.parseBoolean(value);
-        if (targetType.isEnum())
-            return Enum.valueOf((Class<Enum>) targetType, value);
-        throw new RuntimeException("Unsupported @CustomValue type: " + targetType);
     }
 
     private Constructor<?> getConstructorForAutowiring(Class<?> clazz) {
@@ -177,8 +156,12 @@ public class ApplicationContext {
                         CustomHttpMethodMapping meta = annotation.annotationType().getAnnotation(CustomHttpMethodMapping.class);
                         if (Objects.nonNull(meta) && httpMethodMappingParamsHaveValidAnnotations(method)) {
                             String[] paths = (String[]) annotation.annotationType().getMethod("value").invoke(annotation);
+                            boolean isStaticContent = false;
+                            if (Arrays.stream(annotation.annotationType().getMethods()).anyMatch(p -> p.getName().contains("isStaticContent"))) {
+                                isStaticContent = (boolean) annotation.annotationType().getMethod("isStaticContent").invoke(annotation);
+                            }
                             for (String path : paths) {
-                                registerController(meta.httpMethod(), requestMappingPath + path, bean, method);
+                                registerController(meta.httpMethod(), requestMappingPath + path, bean, method, isStaticContent);
                             }
                         } else {
                             throw new IllegalArgumentException("The method must have annotations of CustomGetMapping, CustomPostMapping and etc.\n" +
@@ -218,7 +201,7 @@ public class ApplicationContext {
                         throw new IllegalArgumentException("The CustomValue value is missing or is not primitive type or type of String.\nThe field: " + field.getName() + " in the " + bean);
                     } else {
                         field.setAccessible(true);
-                        field.set(bean, convert(rawValue, field.getType())); // a String.class for now
+                        field.set(bean, Helper.convert(rawValue, field.getType())); // a String.class for now
                         System.out.println("Filed " + field.getName() + " = " + rawValue + " (class: " + bean + ")");
                     }
                 }
@@ -226,14 +209,22 @@ public class ApplicationContext {
         }
     }
 
-    private void registerController(String httpMethod, String path, Object bean, Method method) {
+    private void registerController(String httpMethod, String path, Object bean, Method method, boolean isStaticContent) throws Exception {
         if (path.isEmpty()) {
             path = "/";
         }
         String httpMethodPattern = httpMethod + " " + path.replaceAll("\\{[^/]*}", "([^/]+)");
-        Pattern pathParametersPattern = Pattern.compile(httpMethodPattern);
+        String[] parts = httpMethodPattern.split("\\{\\}", -1);
+        StringBuilder regex = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            regex.append(Pattern.quote(parts[i]));
+            if (i < parts.length - 1) {
+                regex.append("([^/]+)");
+            }
+        }
+        Pattern pathParametersPattern = Pattern.compile(regex.toString());
         Type[] parameterTypes = method.getGenericParameterTypes();
-        controllerHandler.getControllers().put(httpMethodPattern, new Controller(bean, method, pathParametersPattern, parameterTypes));
+        controllerHandler.getControllers().put(httpMethodPattern, new Controller(bean, method, pathParametersPattern, parameterTypes, isStaticContent));
         System.out.println(path + " is assigned with " + method.getName() + " method" + "(" + httpMethodPattern + ")");
     }
 

@@ -9,5 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface CustomGetMapping {
+    boolean isStaticContent() default false;
     String[] value() default "";
 }

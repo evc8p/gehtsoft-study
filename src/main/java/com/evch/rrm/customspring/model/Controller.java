@@ -14,4 +14,5 @@ public class Controller {
     private Method method;
     private Pattern parametersPattern;
     private Type[] type;
+    private boolean isStaticContent;
 }
