@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 @Data
 @AllArgsConstructor
-public class Controller {
+public class Route {
     private Object bean;
     private Method method;
     private Pattern parametersPattern;

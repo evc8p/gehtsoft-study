@@ -22,7 +22,6 @@ public class ServerRequest {
     private String source = null;
     private String path = null;
     private String query = null;
-    private String methodPattern = null;
 
     public void reset() {
         method = "";
@@ -54,13 +53,6 @@ public class ServerRequest {
             }
         }
         return query;
-    }
-
-    public String getMethodPattern() {
-        if (Objects.isNull(methodPattern)) {
-            methodPattern = method + " " + getSource();
-        }
-        return methodPattern;
     }
 
     @Override

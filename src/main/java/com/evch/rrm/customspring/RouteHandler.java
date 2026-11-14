@@ -2,7 +2,7 @@ package com.evch.rrm.customspring;
 
 import com.evch.rrm.customspring.contract.ServerRequest;
 import com.evch.rrm.customspring.contract.ServerResponse;
-import com.evch.rrm.customspring.model.Controller;
+import com.evch.rrm.customspring.model.Route;
 import lombok.Getter;
 
 import java.lang.reflect.InvocationTargetException;
@@ -12,13 +12,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-public class ControllerHandler {
+public class RouteHandler {
     @Getter
-    private final Map<String, Controller> controllers = new HashMap<>();
+    private final Map<String, Map<String, Route>> routes = new HashMap<>();
 
     public ServerResponse handleRequest(ServerRequest request) {
         try {
-            Controller controllerMethod = controllers.get(request.getMethod() + " " + request.getPath());
+            Route controllerMethod = routes.get(request.getMethod()).get(request.getPath());
             Method method = controllerMethod.getMethod();
             Object bean = controllerMethod.getBean();
             boolean isStaticContent = controllerMethod.isStaticContent();
@@ -26,7 +26,7 @@ public class ControllerHandler {
                 return (ServerResponse) method.invoke(bean, null);
             } else {
                 Object[] parameters = new Object[method.getParameterCount()];
-                Matcher m = controllerMethod.getParametersPattern().matcher(request.getMethodPattern());
+                Matcher m = controllerMethod.getParametersPattern().matcher(request.getSource());
                 if (m.matches() || isStaticContent) {
                     String[] methodParams = new String[m.groupCount()];
                     for (int j = 0; j < methodParams.length; j++) {

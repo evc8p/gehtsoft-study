@@ -1,7 +1,7 @@
 package com.evch.rrm.webserver;
 
 import com.evch.rrm.CustomExecutorService;
-import com.evch.rrm.customspring.ControllerHandler;
+import com.evch.rrm.customspring.RouteHandler;
 import com.evch.rrm.customspring.annotation.CustomApplication;
 import com.evch.rrm.customspring.annotation.CustomAutowired;
 import com.evch.rrm.webserver.util.Repository;
@@ -32,7 +32,7 @@ public class CustomWebServer {
     @Setter
     private volatile boolean isKeepAlive = true;
     @CustomAutowired
-    private ControllerHandler controllerHandler;
+    private RouteHandler routeHandler;
 
     public CustomWebServer(Integer port, Integer threadPoolSize, Boolean useVirtualThreads) {
         if (port < 0 || port > 65535) {
@@ -98,7 +98,7 @@ public class CustomWebServer {
     private boolean handleClient(Socket clientSocket) {
         Request request = parseAndExtractRequest(clientSocket);
         Response response;
-        if (checkRequest(request) && Objects.nonNull(response = (Response) controllerHandler.handleRequest(request)) && Objects.nonNull(response.getDataType())) {
+        if (checkRequest(request) && Objects.nonNull(response = (Response) routeHandler.handleRequest(request)) && Objects.nonNull(response.getDataType())) {
             switch (response.getDataType()) {
                 case JSON -> sendTextInResponse(ContentTypes.JSON, response.getData(), clientSocket);
                 case FILE -> sendFileInResponse(response.getData(), clientSocket);

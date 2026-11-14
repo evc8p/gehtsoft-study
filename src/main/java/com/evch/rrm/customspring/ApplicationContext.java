@@ -2,7 +2,7 @@ package com.evch.rrm.customspring;
 
 import com.evch.rrm.customspring.annotation.*;
 import com.evch.rrm.customspring.contract.ServerRequest;
-import com.evch.rrm.customspring.model.Controller;
+import com.evch.rrm.customspring.model.Route;
 import com.evch.rrm.webserver.CustomWebServer;
 
 import java.io.File;
@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class ApplicationContext {
     private Map<Class<?>, Object> beans = new HashMap<>();
-    ControllerHandler controllerHandler = new ControllerHandler();
+    RouteHandler routeHandler = new RouteHandler();
 
     public static void main(String[] args) throws Exception {
         ApplicationContext virtualServerContext = new ApplicationContext();
@@ -178,9 +178,9 @@ public class ApplicationContext {
                         throw new IllegalArgumentException("The Autowired annotation cannot be applied to fields with the final access modifier");
                     }
                     if ((modifiers & Modifier.PRIVATE) != 0) {
-                        if (field.getType().isAssignableFrom(ControllerHandler.class)) {
+                        if (field.getType().isAssignableFrom(RouteHandler.class)) {
                             field.setAccessible(true);
-                            field.set(bean, controllerHandler);
+                            field.set(bean, routeHandler);
                             System.out.println("Dependency injected: controller methods in a field " + field.getName() + " of a class " + bean.getClass().getSimpleName());
                             continue;
                         }
@@ -213,8 +213,8 @@ public class ApplicationContext {
         if (path.isEmpty()) {
             path = "/";
         }
-        String httpMethodPattern = httpMethod + " " + path.replaceAll("\\{[^/]*}", "([^/]+)");
-        String[] parts = httpMethodPattern.split("\\{\\}", -1);
+        String pathPattern = path.replaceAll("\\{[^/]*}", "([^/]+)");
+        String[] parts = pathPattern.split("\\{}", -1);
         StringBuilder regex = new StringBuilder();
         for (int i = 0; i < parts.length; i++) {
             regex.append(Pattern.quote(parts[i]));
@@ -222,10 +222,11 @@ public class ApplicationContext {
                 regex.append("([^/]+)");
             }
         }
-        Pattern pathParametersPattern = Pattern.compile(regex.toString());
+        Pattern parametersPattern = Pattern.compile(regex.toString());
         Type[] parameterTypes = method.getGenericParameterTypes();
-        controllerHandler.getControllers().put(httpMethodPattern, new Controller(bean, method, pathParametersPattern, parameterTypes, isStaticContent));
-        System.out.println(path + " is assigned with " + method.getName() + " method" + "(" + httpMethodPattern + ")");
+        Map<String, Map<String, Route>> routes = routeHandler.getRoutes();
+        routes.computeIfAbsent(httpMethod,r -> new HashMap<>()).put(path, new Route(bean, method, parametersPattern, parameterTypes, isStaticContent));
+        System.out.println(path + " is assigned with " + method.getName() + " method" + "(" + httpMethod + " " + pathPattern + ")");
     }
 
     private List<Class<?>> findClasses(String packageName) throws Exception {
