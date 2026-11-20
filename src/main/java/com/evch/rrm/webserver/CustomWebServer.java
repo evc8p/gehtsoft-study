@@ -9,10 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,8 +19,6 @@ import java.util.concurrent.TimeUnit;
 
 @CustomApplication
 public class CustomWebServer {
-    private final static String USER_DIR_RESOURCES = System.getProperty("user.dir") + "/src/main/resources/";
-    private final static String USER_DIR_STATIC_RESOURCES = USER_DIR_RESOURCES + "static";
     private final int port;
     private final CustomExecutorService executor;
     private ServerSocket serverSocket;
@@ -33,6 +28,8 @@ public class CustomWebServer {
     private volatile boolean isKeepAlive = true;
     @CustomAutowired
     private RouteHandler routeHandler;
+    private static String userStaticDirResources = "/static";
+    private int maxPathLength = 512;
 
     public CustomWebServer(Integer port, Integer threadPoolSize, Boolean useVirtualThreads) {
         if (port < 0 || port > 65535) {
@@ -40,6 +37,9 @@ public class CustomWebServer {
         }
         this.port = port;
         this.executor = new CustomExecutorService(threadPoolSize, useVirtualThreads);
+
+        Properties properties = CustomWebServerProperties.get();
+        this.maxPathLength = properties.getProperty("max_path_length")!= null ? Integer.parseInt(properties.getProperty("max_path_length")) : this.maxPathLength;
     }
 
     public void start() throws IOException {
@@ -104,8 +104,12 @@ public class CustomWebServer {
                 case FILE -> sendFileInResponse(response.getData(), clientSocket);
                 case TEXT -> sendTextInResponse(ContentTypes.TEXT, response.getData(), clientSocket);
                 case ERROR -> {
-                    if (response.getData().equals("404")) {
-                        send404(clientSocket);
+                    switch (response.getData()) {
+                        case "404": send404(clientSocket);
+                        break;
+                        case "405": send405(clientSocket);
+                        break;
+                        case "500": send500(clientSocket);
                     }
                 }
             }
@@ -147,6 +151,7 @@ public class CustomWebServer {
             String[] data = line.split(" ", 3);
             request.setMethod(data[0].trim().toUpperCase());
             request.setUri(data[1].trim());
+            request.setPath(sanitizePath(request.getPath(), clientSocket));
             request.setVersion(data[2].trim().toUpperCase());
 
             //get request headers
@@ -187,6 +192,38 @@ public class CustomWebServer {
             e.printStackTrace();
         }
         return request;
+    }
+
+    private String sanitizePath(String path, Socket clientSocket) {
+        path = path.length() > maxPathLength ? path.substring(0, maxPathLength) : path;
+        String lower = path.toLowerCase();
+        if (!lower.startsWith("/") || lower.contains("%2f") || lower.contains("%5c")) {
+            send400(clientSocket); // encoded / and \
+        }
+        try {
+            path = URLDecoder.decode(path.replace("+", "%2B"), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            send400(clientSocket); //%zz or % at the end
+        }
+        for (int i = 0; i < path.length(); i++) {
+            char c = path.charAt(i);
+            if (c < 0x20 || c == 0x7F || c == '\\') {
+                send400(clientSocket); // restricted symbols
+            }
+        }
+        Deque<String> stack = new ArrayDeque<>();
+        for (String seg : path.split("/")) {
+            if (seg.isEmpty() || seg.equals(".")) continue;
+            if (seg.equals("..")) {
+                if (stack.isEmpty()) {
+                    send400(clientSocket); // out of root
+                }
+                stack.removeLast();
+            } else {
+                stack.addLast(seg);
+            }
+        }
+        return "/" + String.join("/", stack);
     }
 
     private void sendFileInResponse(String filePath, Socket socket) {
@@ -235,7 +272,7 @@ public class CustomWebServer {
 
     private void send400(Socket socket) {
         try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
-            out.write(("HTTP/1.1 400 Bad Request\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            out.write(("HTTP/1.1 400 (Bad Request)\r\n\r\n").getBytes(StandardCharsets.UTF_8));
             out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -245,6 +282,24 @@ public class CustomWebServer {
     private void send404(Socket socket) {
         try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
             out.write(("HTTP/1.1 404 Not Found\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            out.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void send405(Socket socket) {
+        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
+            out.write(("HTTP/1.1 405 Method Not Allowed\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            out.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void send500(Socket socket) {
+        try (BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
+            out.write(("HTTP/1.1 500 Internal Server Error\r\n\r\n").getBytes(StandardCharsets.UTF_8));
             out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);

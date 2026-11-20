@@ -19,8 +19,10 @@ public class ServerRequest {
     private Map<String, String> headers;
     @Getter @Setter
     private String body;
-    private String source = null;
+    @Getter @Setter
     private String path = null;
+    private String prefix = null;
+    @Getter @Setter
     private String query = null;
 
     public void reset() {
@@ -31,18 +33,19 @@ public class ServerRequest {
         body = "";
     }
 
-    public String getSource() {
-        if (Objects.isNull(source)) {
-            source = uri.contains("?") ? uri.substring(0, uri.indexOf("?")) : uri;
-        }
-        return source;
-    }
-
     public String getPath() {
         if (Objects.isNull(path)) {
-            path = getSource().replaceAll("[^/]+\\.[^/]+$", "");
+            path = uri.contains("?") ? uri.substring(0, uri.indexOf("?")) : uri;
         }
         return path;
+    }
+
+    public String getPrefix() {
+        if (Objects.isNull(prefix)) {
+            prefix = getPath().replaceAll("[^/]+\\.[^/]+$", "");
+            if (prefix.length() > 1 && prefix.endsWith("/")) prefix = prefix.substring(0, prefix.length() - 1);
+        }
+        return prefix;
     }
 
     public String getQuery() {
@@ -57,12 +60,15 @@ public class ServerRequest {
 
     @Override
     public String toString() {
-        return "Request{\n" +
-                "method='" + method + '\'' + ",\n" +
-                "uri='" + uri + '\'' + ",\n" +
-                "http version='" + version + '\'' + ",\n" +
-                "headers=" + headers + ",\n" +
-                "body='" + body + '\'' + "\n" +
+        return "ServerRequest{" +
+                "method='" + method + '\'' +
+                ", uri='" + uri + '\'' +
+                ", version='" + version + '\'' +
+                ", headers=" + headers +
+                ", body='" + body + '\'' +
+                ", path='" + path + '\'' +
+                ", prefix='" + prefix + '\'' +
+                ", query='" + query + '\'' +
                 '}';
     }
 }

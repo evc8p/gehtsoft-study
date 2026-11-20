@@ -1,15 +1,7 @@
 package com.evch.rrm.webserver;
 
-import com.evch.rrm.customspring.RouteHandler;
-import com.evch.rrm.customspring.annotation.CustomAutowired;
 import com.evch.rrm.customspring.annotation.CustomRestController;
-import lombok.Getter;
-import lombok.Setter;
 
 @CustomRestController
 public class CustomController {
-    @Getter
-    @Setter
-    @CustomAutowired
-    private RouteHandler routeHandler;
 }

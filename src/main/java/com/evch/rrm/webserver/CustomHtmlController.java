@@ -6,29 +6,41 @@ import com.evch.rrm.customspring.annotation.CustomRequestMapping;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Properties;
 
 import static com.evch.rrm.customspring.contract.ServerResponse.DataType.*;
 
 @CustomRequestMapping()
 public class CustomHtmlController extends CustomController {
-    private final static String USER_DIR_RESOURCES = System.getProperty("user.dir") + "/src/main/resources/";
-    private final static String USER_DIR_STATIC_RESOURCES = USER_DIR_RESOURCES + "static/";
+    @CustomGetMapping({"/", "/images"})
+    public Response getStartPageOrStatic(Request request) {
+        Properties properties = CustomWebServerProperties.get();
+        String staticResourcesFolder = properties.getProperty("static_resources_folder");
+        staticResourcesFolder = staticResourcesFolder != null ? staticResourcesFolder : "static";
+        String path = request.getPath();
+        Path root = Paths.get(staticResourcesFolder).toAbsolutePath().normalize();
+        String relative = path.startsWith("/") ? path.substring(1) : path;
+        Path pathFile = root.resolve(relative).normalize();
+        if (!pathFile.startsWith(root)) {
+            return new Response(ERROR, "400");
+        }
 
-    @CustomGetMapping("/")
-    public Response getStartPageSlash(Request request) {
-        String source = request.getSource();
-        if (source.equals("/") || source.equals("/index.html")) {
-            if (new File(USER_DIR_STATIC_RESOURCES + "index.html").exists()) {
-                return new Response(FILE, USER_DIR_STATIC_RESOURCES + "index.html");
+        if (path.equals("/favicon.ico")) {
+            String file = staticResourcesFolder + request.getPath();
+            if (new File(file).exists()) {
+                return new Response(FILE, file);
             }
         }
-        return new Response(ERROR, "404");
-    }
-
-    @CustomGetMapping(isStaticContent = true, value = {"/static/", "/static/images/"})
-    public Response getStatic(Request request) {
-        String filePath = USER_DIR_RESOURCES + request.getSource();
+        if (path.equals("/") || path.equals("/index.html")) {
+            String file = staticResourcesFolder + "/index.html";
+            if (new File(file).exists()) {
+                return new Response(FILE, file);
+            }
+        }
+        String filePath = staticResourcesFolder + request.getPath();
         if (new File(filePath).exists()) {
             return new Response(FILE, filePath);
         }

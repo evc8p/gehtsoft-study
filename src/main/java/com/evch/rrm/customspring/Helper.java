@@ -1,7 +1,7 @@
 package com.evch.rrm.customspring;
 
 public class Helper {
-    static Object convert(String value, Class<?> targetType) {
+    static Object convertType(String value, Class<?> targetType) {
         if (targetType == String.class) return value;
         if (targetType == byte.class || targetType == Byte.class)
             return Byte.parseByte(value);

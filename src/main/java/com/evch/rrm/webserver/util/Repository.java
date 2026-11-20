@@ -22,7 +22,7 @@ public class Repository {
                 if (hikariDataSource == null) {
                     try (InputStream in = Repository.class.getClassLoader().getResourceAsStream("db.properties")) {
                         if (in == null) {
-                            throw new IllegalStateException("db.properties not found");
+                            throw new IllegalStateException("db.properties not found.");
                         }
                         properties.load(in);
                         Class.forName(properties.getProperty("db.driver"));
@@ -40,7 +40,7 @@ public class Repository {
 
                         hikariDataSource = new HikariDataSource(hikariConfig);
                     } catch (NullPointerException | IOException | ClassNotFoundException | NumberFormatException e) {
-                        throw new IllegalStateException("Failed to initialize the connection pool", e);
+                        throw new IllegalStateException("Failed to initialize the connection pool.", e);
                     }
                 }
             }

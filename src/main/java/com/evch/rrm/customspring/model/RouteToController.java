@@ -9,10 +9,9 @@ import java.util.regex.Pattern;
 
 @Data
 @AllArgsConstructor
-public class Route {
+public class RouteToController {
     private Object bean;
     private Method method;
     private Pattern parametersPattern;
     private Type[] type;
-    private boolean isStaticContent;
 }
